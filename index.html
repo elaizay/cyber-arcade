@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CYBER ARCADE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Luckiest+Guy&family=Nunito:wght@600;700;800;900&display=swap');
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root{ --pink:#ff5db1;--cyan:#36e3ff;--lime:#b6ff3c;--yellow:#ffd23f;--purple:#a96bff;--coral:#ff7a5c;--green:#3ee37a;--red:#ff4d6d;--ink:#1a1030;--glass:rgba(255,255,255,.1); }
+html,body{ height:100%; }
+body{ font-family:'Nunito','Segoe UI',sans-serif; font-weight:600; color:#fff; overflow:hidden; user-select:none; font-size:17px;
+  background:#16092e; background-image:radial-gradient(circle at 15% 10%,#5a2a9c55,transparent 45%),radial-gradient(circle at 85% 20%,#ff5db155,transparent 40%),radial-gradient(circle at 50% 100%,#36e3ff44,transparent 50%),linear-gradient(160deg,#22103f,#16092e 70%);
+  display:flex; align-items:center; justify-content:center; }
+#app{ position:relative; width:100%; height:100dvh; max-width:620px; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; }
+#sound{ position:absolute; top:12px; right:14px; z-index:60; background:var(--glass); border:1.5px solid rgba(255,255,255,.2); color:#fff; border-radius:10px; padding:5px 9px; font-family:inherit; font-size:13px; cursor:pointer; font-weight:700; }
+
+/* HUD */
+#hud{ display:flex; gap:8px; padding:12px 14px 6px; align-items:stretch; flex-shrink:0; }
+.chip{ background:var(--glass); backdrop-filter:blur(10px); border:1.5px solid rgba(255,255,255,.18); border-radius:16px; padding:8px 14px; display:flex; flex-direction:column; line-height:1.15; box-shadow:0 5px 16px rgba(0,0,0,.25); }
+.chip .lbl{ font-size:11px; opacity:.7; letter-spacing:1.5px; font-weight:700; }
+.chip .val{ font-family:'Baloo 2',sans-serif; font-size:clamp(20px,5.5vw,26px); font-weight:800; }
+#scoreChip{ background:linear-gradient(135deg,#ffd23f44,#ff7a5c33); margin-left:auto; text-align:right; } #scoreChip .val{ color:var(--yellow); }
+#lvlChip .val{ color:var(--cyan); font-size:16px; font-family:'Nunito'; font-weight:800; }
+
+/* STAGE */
+#stage{ flex:1 1 0; min-height:0; position:relative; overflow:auto; padding:6px 12px 12px; display:flex; flex-direction:column; }
+#stage::-webkit-scrollbar{ width:6px;} #stage::-webkit-scrollbar-thumb{ background:#5a3a9c; border-radius:6px;}
+
+/* Generic */
+.center{ margin:auto; width:100%; max-width:540px; }
+.row{ display:flex; gap:10px; } .col{ display:flex; flex-direction:column; gap:10px; }
+.bar{ height:16px; background:rgba(0,0,0,.35); border-radius:10px; overflow:hidden; border:1.5px solid rgba(255,255,255,.15); }
+.barfill{ height:100%; border-radius:10px; transition:width .25s; }
+.btn{ border:none; border-radius:14px; font-family:inherit; font-weight:800; cursor:pointer; transition:transform .08s; padding:12px 16px; font-size:15px; color:#fff; }
+.btn:active{ transform:translateY(2px); } .btn:disabled{ opacity:.4; cursor:not-allowed; }
+.b-lime{ background:linear-gradient(135deg,var(--lime),var(--green)); color:#063; box-shadow:0 5px 0 #128a42; }
+.b-cyan{ background:linear-gradient(135deg,var(--cyan),#1aa6c9); color:#053; }
+.b-pink{ background:linear-gradient(135deg,var(--pink),#d6388f); }
+.b-glass{ background:var(--glass); border:1.5px solid rgba(255,255,255,.25); }
+
+/* TD */
+#tdWrap{ margin:auto; text-align:center; }
+#tdCanvas{ width:100%; max-width:540px; height:auto; border-radius:16px; border:2px solid rgba(255,255,255,.15); background:#0d0822; box-shadow:0 12px 30px rgba(0,0,0,.4); cursor:crosshair; display:block; margin:0 auto; }
+#tdPalette{ display:flex; gap:8px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+.twr{ background:var(--glass); border:2px solid rgba(255,255,255,.2); border-radius:14px; padding:8px 12px; cursor:pointer; font-size:13px; font-weight:800; text-align:center; min-width:88px; transition:all .12s; }
+.twr.sel{ border-color:var(--lime); background:rgba(182,255,60,.18); transform:translateY(-3px); }
+.twr .em{ font-size:24px; display:block; }
+.twr .pr{ color:var(--yellow); font-size:12px; }
+#tdInfo{ margin-top:8px; font-size:13px; opacity:.85; }
+
+/* CARD BATTLE */
+#cbWrap{ margin:auto; width:100%; max-width:540px; }
+.fighter{ background:var(--glass); border:1.5px solid rgba(255,255,255,.18); border-radius:16px; padding:12px 14px; margin-bottom:10px; }
+.fighter .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.fighter .nm{ font-weight:800; font-size:17px; } .fighter .em{ font-size:30px; }
+.intent{ background:#3a1652; border:1.5px solid var(--pink); border-radius:12px; padding:5px 10px; font-size:13px; font-weight:800; }
+.statline{ display:flex; gap:12px; font-size:14px; margin-top:6px; font-weight:800; }
+.hand{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0; min-height:130px; }
+.gcard{ width:96px; height:128px; border-radius:14px; padding:8px; cursor:pointer; color:#1a1030; display:flex; flex-direction:column; text-align:center; transition:transform .1s; box-shadow:0 6px 14px rgba(0,0,0,.35); border:3px solid #fff; }
+.gcard:hover{ transform:translateY(-6px); } .gcard.dead{ opacity:.45; cursor:not-allowed; }
+.gcard .cem{ font-size:30px; margin:4px 0; } .gcard .cnm{ font-weight:800; font-size:13px; } .gcard .cdesc{ font-size:11px; margin-top:auto; line-height:1.25; }
+.gcard .cost{ position:relative; align-self:flex-start; background:var(--purple); color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; }
+.c-atk{ background:linear-gradient(160deg,#ffd1d8,#ffb0bd);} .c-def{ background:linear-gradient(160deg,#cfeaff,#a9d6ff);} .c-heal{ background:linear-gradient(160deg,#d3ffd9,#a9f5b8);} .c-util{ background:linear-gradient(160deg,#efe1ff,#d9c4ff);}
+
+/* DETECTIVE */
+#dtWrap{ margin:auto; width:100%; max-width:540px; }
+.clues{ background:var(--glass); border:1.5px solid var(--yellow); border-radius:14px; padding:12px 14px; margin-bottom:12px; }
+.clues h3{ font-size:15px; color:var(--yellow); margin-bottom:6px; }
+.clues li{ margin:4px 0 4px 18px; font-size:14.5px; line-height:1.4; }
+.suspects{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.susp{ background:var(--glass); border:2px solid rgba(255,255,255,.2); border-radius:14px; padding:10px; cursor:pointer; transition:all .12s; position:relative; }
+.susp.elim{ opacity:.4; } .susp.elim::after{ content:'❌'; position:absolute; top:6px; right:8px; font-size:20px; }
+.susp.acc{ border-color:var(--lime); background:rgba(182,255,60,.16); box-shadow:0 0 0 2px var(--lime); }
+.susp .snm{ font-weight:800; font-size:15px; } .susp .sem{ font-size:26px; }
+.susp .attr{ font-size:12px; opacity:.85; margin-top:3px; line-height:1.4; }
+.dtHint{ font-size:12.5px; opacity:.7; text-align:center; margin-bottom:8px; }
+
+/* SPOT */
+#spWrap{ margin:auto; width:100%; max-width:540px; }
+.email{ background:#fff; color:#1a1030; border-radius:14px; padding:14px; box-shadow:0 10px 26px rgba(0,0,0,.4); line-height:1.5; }
+.email .hd{ border-bottom:2px solid #eee; padding-bottom:8px; margin-bottom:8px; }
+.email .logo{ font-family:'Luckiest Guy'; font-size:22px; color:#2b6cff; } .hot{ cursor:pointer; border-radius:5px; padding:0 2px; position:relative; }
+.hot.found{ background:#b6ffc0; outline:2px solid var(--green); }
+.decoy{ cursor:pointer; border-radius:5px; padding:0 2px; }
+.decoy.ok{ background:#ffe2a8; outline:2px solid #ffb020; }
+.fakebtn{ display:inline-block; background:#2b6cff; color:#fff; padding:8px 16px; border-radius:8px; font-weight:800; margin-top:8px; }
+.spTop{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:800; }
+.findpop{ position:absolute; bottom:115%; left:50%; transform:translateX(-50%); background:#1a1030; color:#fff; font-size:11px; padding:4px 8px; border-radius:8px; width:150px; z-index:5; font-weight:700; line-height:1.3; }
+
+/* overlays */
+.ov{ position:absolute; inset:0; z-index:40; display:flex; flex-direction:column; padding:22px; overflow-y:auto; background:rgba(22,9,46,.95); backdrop-filter:blur(7px); }
+.ovc{ margin:auto; width:100%; max-width:470px; text-align:center; }
+.hide{ display:none !important; }
+.logo-big{ font-family:'Luckiest Guy'; font-size:clamp(46px,13vw,76px); line-height:1; background:linear-gradient(90deg,var(--pink),var(--yellow),var(--cyan),var(--lime)); background-size:300%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 4s linear infinite; filter:drop-shadow(0 4px 16px rgba(255,93,177,.4)); }
+@keyframes rainbow{ to{ background-position:300% 0;}}
+.ov h2{ font-family:'Luckiest Guy'; font-size:clamp(30px,8vw,46px); letter-spacing:1px; }
+.tag{ color:var(--cyan); font-size:17px; font-weight:800; margin:4px 0 18px;}
+.panel{ background:var(--glass); border:1.5px solid rgba(255,255,255,.18); border-radius:18px; padding:18px 20px; text-align:left; font-size:16px; line-height:1.7; margin-bottom:18px; }
+.panel b{ color:var(--yellow);}
+.lvlpills{ display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+.pill{ background:var(--glass); border:1.5px solid rgba(255,255,255,.2); border-radius:20px; padding:6px 12px; font-size:13px; font-weight:800; } .pill.done{ background:rgba(62,227,122,.22); border-color:var(--green);} .pill.now{ background:rgba(255,210,63,.2); border-color:var(--yellow);}
+.play{ padding:16px 42px; font-size:23px; font-weight:800; font-family:inherit; color:#1a1030; border:none; border-radius:16px; cursor:pointer; background:linear-gradient(135deg,var(--lime),var(--cyan)); box-shadow:0 6px 0 #1b9a7a; animation:bob 1.3s ease-in-out infinite;}
+@keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-5px);}}
+.play:active{ transform:translateY(3px); box-shadow:0 3px 0 #1b9a7a;}
+.note{ font-size:12px; opacity:.6; margin-top:14px;}
+.shake{ animation:shk .4s;} @keyframes shk{0%,100%{transform:translate(0)}25%{transform:translate(-7px,3px)}50%{transform:translate(6px,-3px)}75%{transform:translate(-4px,2px)}}
+.lives{ font-size:clamp(18px,5vw,22px); letter-spacing:2px; }
+#flash{ position:absolute; inset:0; z-index:30; pointer-events:none; background:transparent; }
+#flash.red{ animation:fr .35s;} @keyframes fr{0%{background:rgba(255,77,109,.25)}100%{background:transparent}}
+#flash.gold{ animation:fg .4s;} @keyframes fg{0%{background:rgba(255,210,63,.18)}100%{background:transparent}}
+.pop{ position:absolute; z-index:50; font-weight:800; pointer-events:none; animation:popUp 1s ease-out forwards; text-shadow:0 2px 8px rgba(0,0,0,.5);} 
+@keyframes popUp{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1;transform:translateY(-8px) scale(1.25)}100%{transform:translateY(-70px) scale(1);opacity:0}}
+  .intentBig{ border-radius:14px; padding:11px 14px; margin-bottom:10px; font-weight:800; font-size:15px; line-height:1.45; text-align:center; }
+  .intentBig.atk{ background:linear-gradient(135deg,#ff4d6d,#b81543); }
+  .intentBig.def{ background:linear-gradient(135deg,#36a0ff,#1660c0); }
+  .gcard{ position:relative; }
+  .gcard.rec{ box-shadow:0 0 0 3px #b6ff3c, 0 8px 16px rgba(0,0,0,.4); transform:translateY(-6px); }
+  .recbadge{ position:absolute; top:-9px; right:-6px; background:#b6ff3c; color:#063; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,.3); }
+  .cyberboard::before{ content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(54,227,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(54,227,255,.08) 1px,transparent 1px); background-size:34px 34px; pointer-events:none; }
+  .cyberboard::after{ content:''; position:absolute; left:0; right:0; top:-70px; height:70px; background:linear-gradient(rgba(54,227,255,.16),transparent); pointer-events:none; animation:scan 3.4s linear infinite; }
+  @keyframes scan{ 0%{ top:-70px; } 100%{ top:100%; } }
+  .threat{ position:absolute; width:66px; height:66px; border:none; background:transparent; cursor:pointer; transform:translate(-50%,-50%); padding:0; transition:transform .12s; animation:thIn .3s cubic-bezier(.2,1.5,.4,1); }
+  .threat:hover{ transform:translate(-50%,-50%) scale(1.14); }
+  .threat:active{ transform:translate(-50%,-50%) scale(.86); }
+  @keyframes thIn{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(0) rotate(-40deg); } 100%{ opacity:1; transform:translate(-50%,-50%) scale(1) rotate(0); } }
+  .threat .ring{ position:absolute; inset:0; border-radius:50%; }
+  .threat .core{ position:absolute; inset:6px; border-radius:50%; }
+  .threat .face{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:28px; pointer-events:none; filter:drop-shadow(0 0 4px rgba(255,255,255,.55)); animation:thFloat 2.2s ease-in-out infinite; }
+  @keyframes thFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2.5px); } }
+  .threat.bad .core{ background:radial-gradient(circle at 38% 30%,#5a1226,#180510); border:1.5px solid #ff4d6d; animation:glowBad 1.1s ease-in-out infinite; }
+  .threat.good .core{ background:radial-gradient(circle at 38% 30%,#0d4026,#04140c); border:1.5px solid #3ee37a; animation:glowGood 1.5s ease-in-out infinite; }
+  @keyframes glowBad{ 0%,100%{ box-shadow:0 0 10px #ff2e63,0 0 18px rgba(255,46,99,.4),inset 0 0 10px rgba(255,77,109,.45); } 50%{ box-shadow:0 0 22px #ff2e63,0 0 40px rgba(255,46,99,.7),inset 0 0 16px rgba(255,77,109,.8); } }
+  @keyframes glowGood{ 0%,100%{ box-shadow:0 0 10px #2bd46a,0 0 18px rgba(62,227,122,.35),inset 0 0 10px rgba(62,227,122,.45); } 50%{ box-shadow:0 0 20px #2bd46a,0 0 34px rgba(62,227,122,.6),inset 0 0 16px rgba(62,227,122,.75); } }
+  .threat.lowtime .core{ animation-duration:.45s; border-color:#fff; }
+  /* ===== bigger, bolder, colorful icons ===== */
+  .twr .em{ font-size:30px; }
+  .threat .face{ font-size:32px; }
+  .email .logo{ font-size:28px; }
+  .hot{ font-weight:800; }
+  #lives{ font-size:clamp(20px,5.5vw,25px); }
+  .chip .val{ text-shadow:0 0 12px rgba(255,255,255,.18); }
+  .susp .snm{ display:flex; flex-direction:column; align-items:flex-start; gap:5px; font-size:16px; }
+  .susp .sem{ font-size:30px; width:56px; height:56px; display:inline-flex; align-items:center; justify-content:center; border-radius:16px; background:linear-gradient(160deg,#a96bff,#36e3ff); box-shadow:0 5px 16px rgba(169,107,255,.5), 0 0 18px rgba(54,227,255,.3); filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+  /* ===== neon cyber icons + motion ===== */
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes nfloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2px); } }
+  .nicon{ display:inline-flex; align-items:center; justify-content:center; }
+  .nicon svg{ width:100%; height:100%; overflow:visible; }
+  .nicon .st{ fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 5px currentColor); }
+  .nicon .fl{ fill:currentColor; filter:drop-shadow(0 0 5px currentColor); }
+  .threat.bad{ color:#ff6b8a; } .threat.good{ color:#5cf0a0; }
+  .threat .face{ font-size:0; }
+  .threat .face .nicon{ width:30px; height:30px; animation:nfloat 2.2s ease-in-out infinite; }
+  .threat .core::before{ content:''; position:absolute; inset:-1px; border-radius:50%; border:2px dashed currentColor; opacity:.35; animation:spin 5s linear infinite; pointer-events:none; }
+  .threat.good .core::before{ animation-direction:reverse; }
+  .pcl{ position:absolute; z-index:45; border-radius:50%; pointer-events:none; box-shadow:0 0 6px currentColor; }
+</style>
+</head>
+<body>
+<div id="app">
+  <button id="sound"></button>
+  <button id="home" class="hide" style="position:absolute;top:12px;left:14px;z-index:60;background:var(--glass);border:1.5px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:5px 9px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:700">🏠 Menu</button>
+  <div id="flash"></div>
+  <div id="hud">
+    <button id="back" class="hide" title="Back to menu" style="background:var(--glass);border:1.5px solid rgba(255,255,255,.25);color:#fff;border-radius:14px;padding:0 12px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap">← Menu</button>
+    <div class="chip"><span class="lbl">LIVES</span><span class="val lives" id="lives">🟢🟢🟢</span></div>
+    <div class="chip" id="lvlChip"><span class="lbl">LEVEL</span><span class="val" id="lvlName">—</span></div>
+    <div class="chip" id="scoreChip"><span class="lbl">SCORE</span><span class="val" id="score">0</span></div>
+  </div>
+  <div id="stage"></div>
+
+  <!-- START / MENU -->
+  <div class="ov" id="ovStart"><div class="ovc">
+    <div class="logo-big">CYBER<br>ARCADE</div>
+    <div class="tag">🛡️ 4 Security Games in 1 🛡️</div>
+    <div style="position:relative;width:100%;max-width:300px;margin:0 auto 14px">
+      <span id="penIcon" class="nicon" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#a96bff;pointer-events:none"></span>
+      <input id="pname" maxlength="14" placeholder="Enter your name" style="width:100%;padding:12px 40px;border-radius:14px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-weight:700;font-size:16px;text-align:center;outline:none">
+    </div>
+    <button class="play" id="bContinue" style="font-size:19px;display:none;background:linear-gradient(135deg,var(--yellow),var(--coral));box-shadow:0 6px 0 #c25b3f;color:#3a1a10;margin-bottom:12px">▶ CONTINUE RUN</button>
+    <button class="play" id="bStart" style="font-size:21px">▶ PLAY FULL CAMPAIGN</button>
+    <div style="font-size:14px;font-weight:800;opacity:.85;margin:16px 0 10px">— or jump straight into one game —</div>
+    <div id="selGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+    <button class="btn b-glass" id="bBoard" style="font-size:15px;padding:12px 24px">🏆 Leaderboard</button>
+    <div class="note" id="best"></div>
+  </div></div>
+
+  <!-- LEADERBOARD -->
+  <div class="ov hide" id="ovBoard"><div class="ovc">
+    <h2>🏆 LEADERBOARD</h2>
+    <div class="tag">Top cyber defenders</div>
+    <div id="boardList" style="text-align:left;margin-bottom:18px"></div>
+    <button class="play" id="bBoardBack">← Back</button>
+    <div class="note">Live scores from everyone who plays your shared game.</div>
+  </div></div>
+
+  <!-- INTRO -->
+  <div class="ov hide" id="ovIntro"><div class="ovc">
+    <div class="tag" id="introDay">DAY 1</div>
+    <h2 id="introTitle">LEVEL 1</h2>
+    <div class="lvlpills" id="introPills"></div>
+    <div class="panel" id="introHow"></div>
+    <button class="play" id="bGo">▶ GO</button>
+  </div></div>
+
+  <!-- RESULT -->
+  <div class="ov hide" id="ovResult"><div class="ovc">
+    <h2 id="resTitle">LEVEL CLEAR!</h2>
+    <div class="tag" id="resMsg"></div>
+    <div class="lives" id="resLives" style="margin-bottom:18px"></div>
+    <button class="play" id="bCont">▶ CONTINUE</button>
+  </div></div>
+
+  <!-- OVER -->
+  <div class="ov hide" id="ovOver"><div class="ovc">
+    <h2 style="color:var(--red)">GAME OVER</h2>
+    <div class="tag" id="overMsg"></div>
+    <div class="panel" id="overStats" style="text-align:center"></div>
+    <button class="play" id="bRestart">⟳ NEW SHIFT</button>
+    <button class="btn b-glass" id="bOverMenu" style="margin-top:12px;font-size:15px;padding:12px 24px">🎮 Main Menu</button>
+  </div></div>
+
+  <!-- VICTORY -->
+  <div class="ov hide" id="ovWin"><div class="ovc">
+    <div class="logo-big" style="font-size:46px">DAY<br>COMPLETE!</div>
+    <div class="tag" id="winMsg"></div>
+    <div class="panel" id="winStats" style="text-align:center"></div>
+    <button class="play" id="bNextDay">▶ NEXT DAY (harder)</button>
+    <button class="btn b-glass" id="bWinMenu" style="margin-top:12px;font-size:15px;padding:12px 24px">🎮 Main Menu</button>
+    <div class="note">pick another game anytime</div>
+  </div></div>
+
+  <!-- PAUSE / QUIT CONFIRM -->
+  <div class="ov hide" id="ovPause"><div class="ovc">
+    <div class="logo-big" style="font-size:clamp(40px,11vw,64px)">PAUSED</div>
+    <div class="tag" id="pauseSub">Take a breather — the game is frozen ⏸️</div>
+    <div class="panel" id="pauseStats" style="text-align:center"></div>
+    <button class="play" id="bResume">▶ KEEP PLAYING</button>
+    <button class="btn b-glass" id="bQuitYes" style="margin-top:12px;font-size:15px;padding:12px 24px">🚪 Quit to Menu</button>
+    <div class="note" id="pauseNote">Quitting returns you to the menu.</div>
+  </div></div>
+</div>
+
+<script>
+/* ===== SOUND ===== */
+const Snd=(()=>{let ctx=null,on=true;const rdy=()=>{if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();};
+ function t(f,d,ty='square',v=.12,to=null,dl=0){if(!on)return;rdy();const s=ctx.currentTime+dl,o=ctx.createOscillator(),g=ctx.createGain();o.type=ty;o.frequency.setValueAtTime(f,s);if(to)o.frequency.exponentialRampToValueAtTime(to,s+d);g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(ctx.destination);o.start(s);o.stop(s+d);}
+ function nz(d,v=.08){if(!on)return;rdy();const s=ctx.currentTime,b=ctx.createBuffer(1,ctx.sampleRate*d,ctx.sampleRate),dt=b.getChannelData(0);for(let i=0;i<dt.length;i++)dt[i]=(Math.random()*2-1)*(1-i/dt.length);const sr=ctx.createBufferSource(),g=ctx.createGain(),f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=500;sr.buffer=b;g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.001,s+d);sr.connect(f);f.connect(g);g.connect(ctx.destination);sr.start(s);}
+ return{set(v){on=v;},get(){return on;},
+  shoot(){t(880,.05,'square',.05,400);},hit(){t(200,.08,'sawtooth',.08,90);},
+  place(){t(523,.06,'square',.1);t(784,.08,'square',.1,null,.05);},
+  card(){t(440,.05,'square',.08);t(660,.06,'square',.08,null,.04);},
+  good(){t(523,.08,'square',.11);t(659,.08,'square',.11,null,.07);t(880,.12,'square',.11,null,.14);},
+  bad(){t(220,.3,'sawtooth',.13,70);nz(.18,.06);},
+  wrong(){t(180,.25,'sawtooth',.12,60);nz(.15,.05);},
+  win(){[523,659,784,1046,1318].forEach((f,i)=>t(f,.13,'triangle',.12,null,i*.08));},
+  click(){t(660,.04,'square',.06);},coin(){t(880,.05,'square',.09);t(1320,.07,'square',.09,null,.05);},
+  over(){[523,392,330,196].forEach((f,i)=>t(f,.3,'triangle',.13,null,i*.16));}};
+})();
+
+/* ===== MUSIC (procedural loop) ===== */
+const Music=(()=>{
+ let ctx=null,on=true,timer=null,step=0,master=null;
+ const SD=0.19, ROOT=130.81;
+ const semis=n=>ROOT*Math.pow(2,n/12);
+ const bass=[0,0,0,7,-3,-3,-3,3,-5,-5,-5,2,-1,-1,2,7];
+ const arp=[12,15,19,15,9,12,15,12,7,12,15,12,11,14,19,14];
+ function v(freq,dur,type,vol){ const t=ctx.currentTime,o=ctx.createOscillator(),g=ctx.createGain();
+   o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.03); }
+ function tick(){ const i=step%16;
+   v(semis(bass[i]-12),SD*1.7,'triangle',0.55);
+   v(semis(arp[i]),SD*0.85,'sine',0.16);
+   if(i%4===0) v(semis(bass[i]),SD*3.2,'sawtooth',0.045);
+   step++; }
+ function ensure(){ try{ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); master=ctx.createGain(); master.gain.value=on?0.12:0; master.connect(ctx.destination); } if(ctx.state==='suspended')ctx.resume(); }catch(e){} }
+ return {
+  start(){ ensure(); if(!ctx||timer)return; step=0; tick(); timer=setInterval(tick,SD*1000); },
+  stop(){ if(timer){clearInterval(timer);timer=null;} },
+  setOn(o){ on=o; if(master)master.gain.value=o?0.12:0; } };
+})();
+
+/* ===== SHELL ===== */
+const LV=[null,
+ {n:'Network Defense',e:'🏰',how:'Threats march toward your <b>core</b> (right side). Pick a defense below, then click an empty tile to place it. Towers auto-fire. Stop every wave — let <b>5 threats</b> leak and you fail!'},
+ {n:'Firewall Breach',e:'🧱',how:'The hacker is flooding your firewall with intrusions! <b>Tap the RED 🦠 threats</b> fast — before each one\'s timer ring empties. <b>Leave the GREEN 📁 system files alone</b> (tapping those costs you integrity). Survive the assault without your integrity hitting 0!'},
+ {n:'Scam Detector',e:'🔍',how:'Messages arrive one at a time. Decide fast: is it a <b>🚫 SCAM</b> or <b>✅ LEGIT</b>? Watch for look-alike domains, fake urgency, and password or gift-card asks. After each call you\'ll see why. 3 wrong calls and the scammers get through!'},
+ {n:'Clone Hunter',e:'🕵️',how:'This email is a <b>phishing fake</b>. Click every <b>tell</b> (bad domain, typos, fake button, scare tactics) before the timer runs out. Too many wrong clicks and you fail!'}];
+
+const G={ lives:3, score:0, level:1, day:1, best:0, raf:0, timers:[], current:null, paused:false, pauseStart:0, name:'Player', board:[] };
+const $=id=>document.getElementById(id), stage=$('stage');
+function clearLoops(){ if(G.raf){cancelAnimationFrame(G.raf);G.raf=0;} G.timers.forEach(t=>clearInterval(t)); G.timers=[]; }
+function cleanup(){ G.paused=false; clearLoops(); if(G.current&&G.current.cleanup)G.current.cleanup(); G.current=null; stage.innerHTML=''; }
+function hud(){
+  let lv=''; for(let i=0;i<3;i++){ lv+=`<span style="display:inline-block;width:13px;height:13px;border-radius:50%;margin:0 1px;background:${i<G.lives?'radial-gradient(circle at 35% 30%,#9dffc4,#1bb85a)':'#2a2440'};box-shadow:${i<G.lives?'0 0 8px #3ee37a':'none'}"></span>`; }
+  $('lives').innerHTML=lv;
+  $('score').textContent=G.score.toLocaleString();
+  $('lvlName').innerHTML=ICON(LVICON[G.level],18,LVCOLOR[G.level])+' '+G.level+'/4'; }
+function hideOvs(){ ['ovStart','ovIntro','ovResult','ovOver','ovWin','ovPause','ovBoard'].forEach(i=>$(i).classList.add('hide')); }
+function pills(active){ return [1,2,3,4].map(i=>`<span class="pill ${i<active?'done':''} ${i===active?'now':''}">${ICON(LVICON[i],14,LVCOLOR[i])} ${LV[i].n}</span>`).join(''); }
+
+async function loadBest(){ try{const r=await window.storage.get('best');if(r&&r.value)G.best=parseInt(r.value)||0;}catch(e){} $('best').innerHTML=G.best>0?(ICON('trophy',13,'#ffd23f')+' Best: '+G.best.toLocaleString()):''; }
+async function saveBest(){ try{await window.storage.set('best',String(G.best));}catch(e){} }
+
+/* ===== SAVED RUN (campaign checkpoint) ===== */
+async function saveRun(ck){ if(G.mode!=='campaign')return; const o=ck||{level:G.level,day:G.day,lives:G.lives,score:G.score};
+  try{ await window.storage.set('run',JSON.stringify({...o,ts:Date.now()})); G.saved={...o}; }catch(e){} }
+async function clearRun(){ G.saved=null; try{ await window.storage.delete('run'); }catch(e){} refreshContinue(); }
+async function loadRun(){ try{ const r=await window.storage.get('run'); G.saved=(r&&r.value)?JSON.parse(r.value):null; }catch(e){ G.saved=null; } refreshContinue(); }
+function refreshContinue(){ const b=$('bContinue'); if(!b)return;
+  if(G.saved&&G.saved.level){ b.style.display=''; b.innerHTML='▶ CONTINUE — Day '+G.saved.day+', Level '+G.saved.level+' '+ICON(LVICON[G.saved.level],15,'#3a1a10'); } else b.style.display='none'; }
+function continueRun(){ if(!G.saved)return; G.mode='campaign'; G.level=G.saved.level; G.day=G.saved.day; G.lives=G.saved.lives; G.score=G.saved.score; Music.start(); hud(); intro(); }
+
+/* ===== LEADERBOARD ===== */
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function ensureDid(){ if(!G.did){ G.did='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); try{window.storage.set('did',G.did);}catch(e){} } return G.did; }
+async function submitScore(){ if(G.mode!=='campaign'||G.score<=0)return; const id=ensureDid();
+   const entry={id,name:(G.name||'Player'),score:G.score,day:G.day,ts:Date.now()};
+   try{ let prev=null; try{ const r=await window.storage.get('lb:'+id,true); if(r&&r.value)prev=JSON.parse(r.value); }catch(e){}
+     if(!prev||entry.score>prev.score) await window.storage.set('lb:'+id,JSON.stringify(entry),true); }catch(e){}
+   try{ const lr=await window.storage.get('mybest'); let mb=lr&&lr.value?JSON.parse(lr.value):null; if(!mb||entry.score>mb.score) await window.storage.set('mybest',JSON.stringify(entry)); }catch(e){} }
+function renderBoard(list){ const el=$('boardList'); if(!el)return;
+   if(!list||!list.length){ el.innerHTML='<div style="text-align:center;opacity:.7;padding:24px 0;font-weight:700">No scores yet —<br>finish or quit a run to make the board! 🏁</div>'; return; }
+   const medal=['🥇','🥈','🥉'];
+   el.innerHTML=list.map((e,i)=>{ const mine=e.id&&e.id===G.did;
+     return `<div style="display:flex;align-items:center;gap:10px;border-radius:12px;padding:9px 12px;margin-bottom:7px;background:${mine?'rgba(54,227,255,.16)':'var(--glass)'};border:1.5px solid ${mine?'var(--cyan)':'rgba(255,255,255,.15)'}">
+     <span style="font-weight:800;font-size:16px;width:30px;text-align:center">${medal[i]||(i+1)}</span>
+     <span style="font-weight:800;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.name||'Player')}${mine?' <span style="color:var(--cyan);font-size:11px">(you)</span>':''}</span>
+     <span style="font-size:11.5px;opacity:.65">Day ${e.day||1}</span>
+     <span style="font-weight:800;color:var(--yellow);min-width:64px;text-align:right">${(e.score||0).toLocaleString()}</span>
+   </div>`; }).join(''); }
+async function showBoard(){ hideOvs(); $('ovBoard').classList.remove('hide');
+   const el=$('boardList'); if(el)el.innerHTML='<div style="text-align:center;opacity:.7;padding:24px 0">Loading scores…</div>';
+   let list=[];
+   try{ const r=await window.storage.list('lb:',true); const keys=(r&&r.keys)?r.keys:[];
+     const got=await Promise.all(keys.map(async k=>{ try{ const g=await window.storage.get(k,true); return g&&g.value?JSON.parse(g.value):null; }catch(e){ return null; } }));
+     list=got.filter(Boolean); }catch(e){ list=[]; }
+   if(!list.length){ try{ const lr=await window.storage.get('mybest'); if(lr&&lr.value)list=[JSON.parse(lr.value)]; }catch(e){} }
+   list.sort((a,b)=>b.score-a.score); list=list.slice(0,20);
+   renderBoard(list); }
+
+function newGame(){ G.lives=3;G.score=0;G.level=1;G.day=1; hud(); intro(); }
+function intro(){ cleanup(); hideOvs(); hud();
+  $('introDay').textContent='DAY '+G.day; $('introTitle').textContent='LEVEL '+G.level+': '+LV[G.level].n.toUpperCase();
+  $('introPills').innerHTML=pills(G.level); $('introHow').innerHTML=`<div style="text-align:center;margin-bottom:12px"><span style="display:inline-flex;width:66px;height:66px;border-radius:18px;align-items:center;justify-content:center;background:linear-gradient(160deg,#a96bff,#36e3ff);box-shadow:0 0 24px rgba(54,227,255,.45)">${ICON(LVICON[G.level],40,'#fff')}</span></div>`+LV[G.level].how; $('ovIntro').classList.remove('hide'); saveRun(); }
+function go(){ hideOvs(); cleanup(); Music.start(); Snd.coin(); ({1:TD,2:CB,3:DT,4:SP})[G.level].start(); }
+
+function winLevel(bonus){ Snd.win(); G.score+=bonus; hud();
+  if(G.mode==='free'){ resultFree(true,'CLEARED! 🎉','+'+bonus+' points — nice work!'); return; }
+  if(G.level>=4){ victory(); return; }
+  cleanup(); hideOvs(); $('resTitle').textContent='LEVEL CLEAR! 🎉'; $('resTitle').style.color='var(--lime)';
+  $('resMsg').innerHTML='+'+bonus+' points · Next: '+ICON(LVICON[G.level+1],15,LVCOLOR[G.level+1])+' '+LV[G.level+1].n;
+  $('resLives').textContent='🟢'.repeat(G.lives); $('bCont').textContent='▶ CONTINUE'; $('ovResult').classList.remove('hide');
+  $('bCont').onclick=()=>{ G.level++; intro(); }; }
+function failLevel(reason){ Snd.bad();
+  if(G.mode==='free'){ resultFree(false,'TRY AGAIN',reason); return; }
+  G.lives--; hud(); cleanup(); hideOvs();
+  if(G.lives<=0){ gameOver(reason); return; }
+  $('resTitle').textContent='LEVEL FAILED'; $('resTitle').style.color='var(--red)';
+  $('resMsg').textContent=reason+' — lost a life. Try again!'; $('resLives').textContent='🟢'.repeat(G.lives);
+  $('bCont').textContent='▶ CONTINUE'; $('ovResult').classList.remove('hide'); $('bCont').onclick=()=>intro(); }
+function gameOver(reason){ Snd.over(); cleanup(); hideOvs();
+  if(G.score>G.best){G.best=G.score;saveBest();}
+  $('overMsg').textContent=reason; $('overStats').innerHTML=`Final score: <b style="color:var(--yellow)">${G.score.toLocaleString()}</b><br>Reached: Day ${G.day}, Level ${G.level}<br>Best ever: <b>${G.best.toLocaleString()}</b>`;
+  clearRun(); submitScore(); $('ovOver').classList.remove('hide'); }
+function victory(){ cleanup(); hideOvs(); if(G.score>G.best){G.best=G.score;saveBest();}
+  $('winMsg').textContent='Day '+G.day+' secured! 🛡️'; $('winStats').innerHTML=`Score: <b style="color:var(--yellow)">${G.score.toLocaleString()}</b><br>Lives left: ${'🟢'.repeat(G.lives)}<br>+ ${G.day*200} bonus for the day!`;
+  G.score+=G.day*200; hud(); saveRun({level:1,day:G.day+1,lives:Math.min(3,G.lives+1),score:G.score}); submitScore(); $('ovWin').classList.remove('hide');
+  $('bNextDay').onclick=()=>{ G.day++; G.level=1; G.lives=Math.min(3,G.lives+1); intro(); }; }
+
+function flash(c){ const f=$('flash'); f.classList.remove('red','gold'); void f.offsetWidth; f.classList.add(c); }
+function popN(txt,x,y,color,sc){ const e=document.createElement('div'); e.className='pop'; e.textContent=txt; e.style.left=x+'px'; e.style.top=y+'px'; e.style.color=color||'#ffd23f'; e.style.fontSize=(20*(sc||1))+'px'; e.style.transform='translateX(-50%)'; $('app').appendChild(e); setTimeout(()=>e.remove(),1000); }
+function shakeStage(){ stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
+
+/* ============================================================
+   LEVEL 1 — TOWER DEFENSE
+============================================================ */
+const TD=(()=>{
+ const CELL=60,COLS=9,ROWS=7,W=COLS*CELL,H=ROWS*CELL;
+ const WP=[{x:-30,y:90},{x:450,y:90},{x:450,y:210},{x:90,y:210},{x:90,y:330},{x:510,y:330}];
+ let pathCells, st, sel;
+ const TYPES={ filter:{e:'🛡️',ic:'hex6',nm:'Filter',cost:40,range:95,dmg:7,cd:28,col:'#36e3ff'},
+   scanner:{e:'🔍',ic:'sq4',nm:'Scanner',cost:75,range:150,dmg:16,cd:52,col:'#a96bff'},
+   honey:{e:'🍯',ic:'tri3',nm:'Honeypot',cost:55,range:85,dmg:3,cd:24,col:'#ffd23f',slow:true} };
+ const ENE={ spam:{e:'📧',hp:34,sp:0.9,val:12}, malware:{e:'🦠',hp:80,sp:0.65,val:22}, bot:{e:'🤖',hp:20,sp:1.7,val:11} };
+ function buildPath(){ pathCells=new Set(); const add=(r,c)=>pathCells.add(r+','+c);
+   for(let c=0;c<=7;c++)add(1,c); for(let r=1;r<=3;r++)add(r,7); for(let c=1;c<=7;c++)add(3,c); for(let r=3;r<=5;r++)add(r,1); for(let c=1;c<=8;c++)add(5,c); }
+ function waves(){ const d=1+0.3*(G.day-1); const mk=(t,n)=>Array(n).fill(t);
+   const list=[...mk('spam',8),'G',...mk('spam',5),...mk('bot',4),'G',...mk('bot',6),...mk('malware',3),'G',...mk('malware',5),...mk('bot',5),...mk('spam',4)];
+   return {list, d}; }
+ function start(){
+   buildPath(); const w=waves();
+   st={ money:175, leaks:0, leaksMax:7, towers:[], enemies:[], beams:[], toSpawn:w.list, spawnCd:0, hpScale:w.d*0.85, frame:0, killed:0, started:false, autoStart:420, hoverR:-1, hoverC:-1 };
+   sel='filter';
+   stage.innerHTML=`<div id="tdWrap">
+     <canvas id="tdCanvas" width="${W}" height="${H}"></canvas>
+     <div id="tdPalette"></div>
+     <button class="btn b-lime" id="tdStart" style="margin-top:10px;width:100%">▶ START WAVE</button>
+     <div id="tdInfo">🔧 Pick a defense below, hover a green tile, then click to build. Take your time!</div></div>`;
+   const pal=$('tdPalette');
+   Object.entries(TYPES).forEach(([k,v])=>{ const d=document.createElement('div'); d.className='twr'+(k===sel?' sel':''); d.dataset.k=k;
+     d.innerHTML=`<span class="em">${ICON(v.ic,28,v.col)}</span>${v.nm}<span class="pr">💰${v.cost}</span>`; d.onclick=()=>{ sel=k; Snd.click(); [...pal.children].forEach(c=>c.classList.toggle('sel',c.dataset.k===sel)); }; pal.appendChild(d); });
+   const cv=$('tdCanvas'), ctx=cv.getContext('2d');
+   const toCell=e=>{ const r=cv.getBoundingClientRect(),sx=cv.width/r.width,sy=cv.height/r.height; return {c:Math.floor((e.clientX-r.left)*sx/CELL), r:Math.floor((e.clientY-r.top)*sy/CELL)}; };
+   cv.onclick=e=>{ const p=toCell(e); place(p.r,p.c); };
+   cv.onmousemove=e=>{ const p=toCell(e); st.hoverR=p.r; st.hoverC=p.c; };
+   cv.onmouseleave=()=>{ st.hoverR=-1; st.hoverC=-1; };
+   $('tdStart').onclick=()=>{ st.started=true; $('tdStart').style.display='none'; $('tdInfo').textContent='🚨 Wave incoming! Keep building anytime.'; };
+   G.current={cleanup(){}, pause(){ if(G.raf){cancelAnimationFrame(G.raf);G.raf=0;} }, resume(){ loop(ctx); }}; loop(ctx);
+ }
+ function place(r,c){ if(r<0||c<0||r>=ROWS||c>=COLS) return;
+   const ix=st.towers.findIndex(t=>t.r===r&&t.c===c);
+   if(ix>=0){ const tw=st.towers[ix], rf=Math.round(TYPES[tw.type].cost*0.6); st.money+=rf; st.towers.splice(ix,1); Snd.click(); popN('+'+rf,c*CELL+30,r*CELL,'#b6ff3c'); $('tdInfo').textContent='♻️ Sold for 💰'+rf; return; }
+   if(pathCells.has(r+','+c)){ $('tdInfo').textContent='⛔ Can\'t build on the path.'; return; }
+   const T=TYPES[sel]; if(st.money<T.cost){ $('tdInfo').textContent='💰 Not enough — defeat threats to earn more!'; return; }
+   st.money-=T.cost; st.towers.push({r,c,x:c*CELL+30,y:r*CELL+30,type:sel,cd:0}); Snd.place(); popN('-'+T.cost,c*CELL+30,r*CELL,'#ff9a9a'); $('tdInfo').textContent='✅ '+T.nm+' built! Tip: click a tower to sell it.'; }
+ function spawn(){ if(st.toSpawn.length===0) return; if(st.spawnCd>0){ st.spawnCd--; return; }
+   const t=st.toSpawn.shift(); if(t==='G'){ st.spawnCd=70; return; }
+   const E=ENE[t]; st.enemies.push({x:WP[0].x,y:WP[0].y,wp:0,t:0,hp:E.hp*st.hpScale,max:E.hp*st.hpScale,sp:E.sp,val:E.val,e:E.e,slow:0}); st.spawnCd=38; }
+ function step(){ st.frame++;
+   if(!st.started){ if(--st.autoStart<=0){ st.started=true; const b=$('tdStart'); if(b)b.style.display='none'; const inf=$('tdInfo'); if(inf)inf.textContent='🚨 Wave incoming! Keep building anytime.'; } }
+   else spawn();
+   const SPEEDF=0.8;
+   for(const en of st.enemies){ const a=WP[en.wp],b=WP[en.wp+1]; if(!b){ en.dead='leak'; continue; }
+     const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy); en.t+=(en.sp*SPEEDF*(en.slow>0?0.45:1))/len; if(en.slow>0)en.slow--;
+     if(en.t>=1){ en.wp++; en.t=0; } en.x=a.x+dx*en.t; en.y=a.y+dy*en.t; }
+   st.beams=st.beams.filter(b=>(b.life--)>0);
+   for(const tw of st.towers){ const T=TYPES[tw.type]; if(tw.cd>0){tw.cd--;continue;}
+     let tgt=null,bd=1e9; for(const en of st.enemies){ if(en.dead)continue; const d=Math.hypot(en.x-tw.x,en.y-tw.y); if(d<=T.range&&d<bd){bd=d;tgt=en;} }
+     if(tgt){ tgt.hp-=T.dmg; if(T.slow)tgt.slow=70; st.beams.push({x1:tw.x,y1:tw.y,x2:tgt.x,y2:tgt.y,life:6,col:T.col}); tw.cd=T.cd; Snd.shoot();
+       if(tgt.hp<=0&&!tgt.dead){ tgt.dead='kill'; st.money+=tgt.val; st.killed++; Snd.hit(); } } }
+   st.enemies=st.enemies.filter(en=>{ if(en.dead==='leak'){ st.leaks++; flash('red'); shakeStage(); return false; } return en.dead!=='kill'; });
+   if(st.leaks>=st.leaksMax){ failLevel('Too many threats breached the core'); return false; }
+   if(st.started&&st.toSpawn.length===0&&st.enemies.length===0){ winLevel(220+st.killed*4+st.money); return false; }
+   return true;
+ }
+ function draw(ctx){ ctx.clearRect(0,0,W,H);
+   const occ=(r,c)=>st.towers.some(t=>t.r===r&&t.c===c);
+   // buildable tiles
+   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ if(pathCells.has(r+','+c)||occ(r,c))continue;
+     ctx.fillStyle='rgba(182,255,60,.05)'; ctx.fillRect(c*CELL+3,r*CELL+3,CELL-6,CELL-6);
+     ctx.strokeStyle='rgba(182,255,60,.2)'; ctx.lineWidth=1.5; ctx.strokeRect(c*CELL+3,r*CELL+3,CELL-6,CELL-6); }
+   // path
+   ctx.strokeStyle='#3a2a66'; ctx.lineWidth=44; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath(); ctx.moveTo(WP[0].x,WP[0].y); for(let i=1;i<WP.length;i++)ctx.lineTo(WP[i].x,WP[i].y); ctx.stroke();
+   ctx.strokeStyle='#241a45'; ctx.lineWidth=30; ctx.stroke();
+   ctx.font='34px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🖥️',510,330); ctx.fillText('📥',10,90);
+   // towers
+   for(const tw of st.towers){ const T=TYPES[tw.type]; ctx.fillStyle=T.col+'14'; ctx.beginPath(); ctx.arc(tw.x,tw.y,T.range,0,7); ctx.fill();
+     ctx.save(); ctx.translate(tw.x,tw.y); ctx.shadowColor=T.col; ctx.shadowBlur=14; ctx.strokeStyle=T.col; ctx.fillStyle=T.col+'33'; ctx.lineWidth=2.5;
+     const sides=tw.type==='scanner'?4:(tw.type==='honey'?3:6), rot=st.frame*0.02*(tw.type==='honey'?-1:1);
+     ctx.beginPath(); for(let k=0;k<sides;k++){ const ang=rot+k/sides*6.283-1.57, px=Math.cos(ang)*15, py=Math.sin(ang)*15; k?ctx.lineTo(px,py):ctx.moveTo(px,py); } ctx.closePath(); ctx.fill(); ctx.stroke();
+     ctx.beginPath(); ctx.arc(0,0,4.5,0,7); ctx.fillStyle=T.col; ctx.fill(); ctx.restore(); }
+   // hover preview
+   if(st.hoverR>=0&&st.hoverR<ROWS&&st.hoverC>=0&&st.hoverC<COLS){ const r=st.hoverR,c=st.hoverC,onPath=pathCells.has(r+','+c),isOcc=occ(r,c),T=TYPES[sel],x=c*CELL+30,y=r*CELL+30;
+     if(isOcc){ ctx.fillStyle='rgba(255,210,63,.2)'; ctx.fillRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4); ctx.fillStyle='#ffd23f'; ctx.font='800 13px Nunito,sans-serif'; ctx.fillText('sell ♻️',x,y+24); }
+     else { const ok=!onPath&&st.money>=T.cost; ctx.fillStyle=ok?'rgba(182,255,60,.22)':'rgba(255,77,109,.22)'; ctx.fillRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
+       ctx.strokeStyle=ok?'#b6ff3c':'#ff4d6d'; ctx.lineWidth=2.5; ctx.strokeRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
+       if(ok){ ctx.fillStyle=T.col+'22'; ctx.beginPath(); ctx.arc(x,y,T.range,0,7); ctx.fill(); ctx.globalAlpha=.55; ctx.font='30px sans-serif'; ctx.fillText(T.e,x,y); ctx.globalAlpha=1; } } }
+   // beams
+   for(const b of st.beams){ ctx.strokeStyle=b.col; ctx.lineWidth=3; ctx.globalAlpha=b.life/6; ctx.beginPath(); ctx.moveTo(b.x1,b.y1); ctx.lineTo(b.x2,b.y2); ctx.stroke(); ctx.globalAlpha=1; }
+   // enemies
+   for(const en of st.enemies){ ctx.save(); ctx.translate(en.x,en.y);
+     let col='#ff5db1', sides=0; if(en.e==='🦠'){ col='#ff4d6d'; sides=6; } else if(en.e==='🤖'){ col='#ff9a3c'; sides=3; }
+     ctx.shadowColor=col; ctx.shadowBlur=12; ctx.strokeStyle=col; ctx.fillStyle=col+'44'; ctx.lineWidth=2.5;
+     const rot=st.frame*0.04, R=12;
+     if(sides===0){ ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fill(); ctx.stroke(); }
+     else { ctx.beginPath(); for(let k=0;k<sides;k++){ const ang=rot+k/sides*6.283-1.57, px=Math.cos(ang)*R, py=Math.sin(ang)*R; k?ctx.lineTo(px,py):ctx.moveTo(px,py); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+     ctx.restore();
+     const w=34,h=5; ctx.fillStyle='#000'; ctx.fillRect(en.x-w/2,en.y-24,w,h); ctx.fillStyle=en.hp/en.max>.4?'#3ee37a':'#ff4d6d'; ctx.fillRect(en.x-w/2,en.y-24,w*Math.max(0,en.hp/en.max),h); }
+   // top HUD
+   ctx.fillStyle='rgba(13,8,34,.85)'; ctx.fillRect(0,0,W,30); ctx.textAlign='left'; ctx.font='800 18px Nunito,sans-serif';
+   ctx.fillStyle='#ffd23f'; ctx.fillText('💰 '+st.money,10,15); ctx.fillStyle='#ff8fa6'; ctx.fillText('💥 '+st.leaks+'/'+st.leaksMax,148,15);
+   ctx.fillStyle='#9fe6ff'; ctx.fillText('👾 '+(st.enemies.length+st.toSpawn.filter(x=>x!=='G').length)+' left',270,15);
+   // prep banner
+   if(!st.started){ ctx.fillStyle='rgba(13,8,34,.8)'; ctx.fillRect(0,H/2-26,W,52); ctx.textAlign='center'; ctx.fillStyle='#b6ff3c'; ctx.font='800 20px Nunito,sans-serif';
+     ctx.fillText('🔧 Build your defenses! Wave in '+Math.ceil(st.autoStart/60)+'s',W/2,H/2); ctx.textAlign='left'; }
+ }
+ function loop(ctx){ const cont=step(); draw(ctx); if(cont) G.raf=requestAnimationFrame(()=>loop(ctx)); }
+ return {start};
+})();
+
+/* ============================================================
+   LEVEL 2 — CARD BATTLER
+============================================================ */
+const CB=(()=>{
+ let st;
+ const DECK=[ ...rep({k:'atk',nm:'Exploit',e:'⚔️',cost:1,val:6,d:'Deal 6 damage'},4),
+   ...rep({k:'atk',nm:'Big Hack',e:'💥',cost:2,val:13,d:'Deal 13 damage'},2),
+   ...rep({k:'def',nm:'Firewall',e:'🛡️',cost:1,val:7,d:'Block 7 (stops a hit)'},3),
+   ...rep({k:'heal',nm:'Patch',e:'💉',cost:1,val:6,d:'Heal 6 HP'},2),
+   ...rep({k:'util',nm:'Overclock',e:'⚡',cost:1,val:2,d:'Draw 2 cards'},1),
+   ...rep({k:'atk',nm:'Virus',e:'🐛',cost:1,val:4,d:'Deal 4, twice'},1) ];
+ function rep(o,n){ return Array.from({length:n},()=>({...o})); }
+ function start(){
+   const d=G.day-1;
+   const st={ integ:100, time:36, last:performance.now(), spawnAcc:0,
+     spawnEvery:Math.max(0.55,0.95-d*0.1), ttlMax:Math.max(1.3,2.5-d*0.2),
+     threats:[], score:0, combo:0, over:false };
+   stage.innerHTML=`<div id="cbWrap">
+     <div class="intentBig" style="background:linear-gradient(135deg,#a96bff,#36e3ff)">🚨 The hacker is breaching your firewall!<br><b>Tap the RED threats</b> before their ring empties — <b>leave the GREEN system files alone!</b></div>
+     <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px"><span style="font-weight:800;font-size:14px;white-space:nowrap">🧱 Integrity</span><div class="bar" style="flex:1"><div class="barfill" id="integFill" style="width:100%;background:linear-gradient(90deg,#3ee37a,#ffd23f)"></div></div></div>
+     <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;margin-bottom:8px"><span id="cbTime">⏱️ 36s</span><span id="cbScore">Blocked: 0</span></div>
+     <div id="cbBoard" class="cyberboard" style="position:relative;width:100%;height:min(54vh,400px);background:radial-gradient(circle at 50% 40%,#1d1448,#0d0822);border:2px solid rgba(255,255,255,.18);border-radius:16px;overflow:hidden"></div>
+   </div>`;
+   const board=$('cbBoard');
+   const ICO={
+     alert:'<svg viewBox="0 0 24 24"><polygon class="st" points="12,3 22,21 2,21"/><line class="st" x1="12" y1="9" x2="12" y2="14"/><circle class="fl" cx="12" cy="17.5" r="1"/></svg>',
+     hex:'<svg viewBox="0 0 24 24"><polygon class="st" points="6,3 18,3 22,12 18,21 6,21 2,12"/><line class="st" x1="9" y1="9" x2="15" y2="15"/><line class="st" x1="15" y1="9" x2="9" y2="15"/></svg>',
+     bug:'<svg viewBox="0 0 24 24"><ellipse class="st" cx="12" cy="13" rx="5" ry="6"/><line class="st" x1="12" y1="2" x2="12" y2="7"/><line class="st" x1="3" y1="10" x2="7" y2="12"/><line class="st" x1="21" y1="10" x2="17" y2="12"/><line class="st" x1="3" y1="19" x2="7" y2="15"/><line class="st" x1="21" y1="19" x2="17" y2="15"/></svg>',
+     lock:'<svg viewBox="0 0 24 24"><rect class="st" x="5" y="10" width="14" height="10" rx="2"/><path class="st" d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+     skull:'<svg viewBox="0 0 24 24"><path class="st" d="M5 11a7 7 0 0 1 14 0c0 3-2 4-2 6H7c0-2-2-3-2-6z"/><circle class="fl" cx="9.5" cy="11" r="1.3"/><circle class="fl" cx="14.5" cy="11" r="1.3"/></svg>',
+     file:'<svg viewBox="0 0 24 24"><path class="st" d="M7 3h7l4 4v14H7z"/><path class="st" d="M14 3v4h4"/></svg>',
+     check:'<svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="9"/><path class="st" d="M8 12l3 3 5-6"/></svg>',
+     gear:'<svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="4"/><path class="st" d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>',
+     shield:'<svg viewBox="0 0 24 24"><path class="st" d="M12 3l7 3v6c0 5-3 7-7 9-4-2-7-4-7-9V6z"/></svg>',
+     chip:'<svg viewBox="0 0 24 24"><rect class="st" x="6" y="6" width="12" height="12" rx="2"/><path class="st" d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>'
+   };
+   const BAD=['alert','hex','bug','lock','skull'], GOOD=['file','check','gear','shield','chip'];
+   function burst(x,y,color){ for(let i=0;i<11;i++){ const p=document.createElement('div'); p.className='pcl'; const s=4+Math.random()*5; p.style.width=p.style.height=s+'px'; p.style.left=x+'px'; p.style.top=y+'px'; p.style.background=Math.random()<.5?color:'#fff'; p.style.color=color; $('app').appendChild(p); const ang=Math.random()*6.28, dd=28+Math.random()*44; p.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`translate(${Math.cos(ang)*dd-50}%,${Math.sin(ang)*dd}px) scale(0)`,opacity:0}],{duration:480+Math.random()*260,easing:'cubic-bezier(.2,.8,.3,1)'}); setTimeout(()=>p.remove(),760); } }
+   function bars(){ const f=$('integFill'); if(f){ f.style.width=Math.max(0,st.integ)+'%'; f.style.background=st.integ<35?'linear-gradient(90deg,#ff4d6d,#ffd23f)':'linear-gradient(90deg,#3ee37a,#ffd23f)'; }
+     const tm=$('cbTime'); if(tm)tm.textContent='⏱️ '+Math.ceil(Math.max(0,st.time))+'s';
+     const sc=$('cbScore'); if(sc)sc.innerHTML='Blocked: '+st.score+(st.combo>2?' &nbsp;🔥 x'+st.combo:''); }
+   function rem(t){ t.gone=true; const el=t.el; if(el){ el.style.transition='transform .15s,opacity .15s'; el.style.opacity='0'; el.style.transform='translate(-50%,-50%) scale(1.4)'; el.style.pointerEvents='none'; setTimeout(()=>el.remove(),160); } st.threats=st.threats.filter(x=>x!==t); }
+   function hit(t){ if(t.gone||st.over)return; const r=t.el.getBoundingClientRect(),a=$('app').getBoundingClientRect(); const cx=r.left-a.left+r.width/2, cy=r.top-a.top+r.height/2;
+     if(t.bad){ st.score++; st.combo++; Snd.good(); popN('+1',cx,cy-12,'#36e3ff',1.2); burst(cx,cy,'#36e3ff'); }
+     else { st.combo=0; st.integ-=10; Snd.wrong(); flash('red'); shakeStage(); popN('✕ system file!',cx,cy,'#ff7a7a',1); }
+     rem(t); bars(); }
+   function spawn(){ if(st.threats.filter(t=>!t.gone).length>7)return;
+     const bad=Math.random()<0.66, nm=bad?BAD[Math.random()*BAD.length|0]:GOOD[Math.random()*GOOD.length|0];
+     const x=10+Math.random()*80, y=14+Math.random()*72;
+     const t={ bad, ttl:st.ttlMax, ttlMax:st.ttlMax, gone:false, el:null, ring:null };
+     const b=document.createElement('button'); b.className='threat '+(bad?'bad':'good'); b.style.left=x+'%'; b.style.top=y+'%';
+     b.innerHTML=`<span class="ring"></span><span class="core"></span><span class="face"><span class="nicon">${ICO[nm]}</span></span>`; b.onclick=ev=>{ ev.stopPropagation(); hit(t); };
+     t.el=b; t.ring=b.querySelector('.ring'); board.appendChild(b); st.threats.push(t); }
+   function loop(){ if(st.over)return; const now=performance.now(), dt=Math.min(0.05,(now-st.last)/1000); st.last=now;
+     st.time-=dt; st.spawnAcc+=dt;
+     if(st.spawnAcc>=st.spawnEvery){ st.spawnAcc=0; spawn(); if(st.spawnEvery>0.55)st.spawnEvery-=0.006; }
+     for(const t of st.threats){ if(t.gone)continue; t.ttl-=dt; const p=Math.max(0,t.ttl/t.ttlMax);
+       if(t.ring) t.ring.style.background=`conic-gradient(${t.bad?'#ff6b8a':'#5cf0a0'} ${p*360}deg, rgba(255,255,255,.07) ${p*360}deg)`;
+       if(t.el){ if(p<0.32) t.el.classList.add('lowtime'); else t.el.classList.remove('lowtime'); }
+       if(t.ttl<=0){ if(t.bad){ st.integ-=12; st.combo=0; flash('red'); shakeStage(); } rem(t); } }
+     bars();
+     if(st.integ<=0){ st.integ=0; bars(); st.over=true; failLevel('The hacker breached your firewall'); return; }
+     if(st.time<=0){ st.over=true; winLevel(240+Math.round(st.integ*2)+st.score*4); return; }
+     G.raf=requestAnimationFrame(loop); }
+   G.current={cleanup(){ st.over=true; }, pause(){ if(G.raf){cancelAnimationFrame(G.raf);G.raf=0;} }, resume(){ st.last=performance.now(); loop(); }};
+   bars(); loop();
+ }
+ return {start};
+})();
+
+/* ============================================================
+   LEVEL 3 — DETECTIVE
+============================================================ */
+const DT=(()=>{
+ const MSGS=[
+  // ---- Tier 1: obvious ----
+  {lvl:1,scam:1,from:'PayPaI Security',addr:'service@paypa1-secure.com',txt:"Your account is FROZEN! Verify in the next 1 hour or lose access forever.",why:'Look-alike domain "paypa1" (digit 1) + fake urgency.'},
+  {lvl:1,scam:1,from:'IT Support',addr:'it@rnegacorp.com',txt:"Log in with your CURRENT password to keep your account active. Failure = deletion tonight.",why:'"rn" fakes an "m"; real IT never asks for your password.'},
+  {lvl:1,scam:1,from:'Delivery',addr:'+1 (000) 4-PARCEL',txt:"Your parcel is held! Pay a $1.99 customs fee here to release it.",why:'Tiny fee to a sketchy link; not a real courier.'},
+  {lvl:1,scam:1,from:'BOSS (kinda)',addr:'+1 (555) 010-9999',txt:"It's your CEO. Buy 5 Amazon gift cards and send me the codes ASAP.",why:'Gift-card request from an unknown number = classic scam.'},
+  {lvl:1,scam:1,from:'Netfl1x',addr:'help@netflix-account-help.co',txt:"Update your card number, CVV and PIN within 24h or lose access.",why:'No service asks for your PIN; look-alike domain.'},
+  {lvl:1,scam:1,from:'Prize Center',addr:'pop-up',txt:"You are visitor 1,000,000! Claim your iPhone — just pay $2 shipping.",why:'Nobody is the millionth visitor; a fee for a "free" prize.'},
+  {lvl:1,scam:1,from:'Crypto Bro',addr:'+1 (555) 888-MOON',txt:"Guaranteed 100x! DM me your wallet seed phrase to join the pool.",why:'"Guaranteed" returns + never share your seed phrase.'},
+  {lvl:1,scam:0,from:'GitHub',addr:'noreply@github.com',txt:"New sign-in from Chrome on Mac. If this was you, no action needed.",why:'Genuine github.com; no credentials requested.'},
+  {lvl:1,scam:0,from:'Sarah (Accounting)',addr:'sarah.chen@megacorp.com',txt:"Team lunch Friday — tacos or sushi? Let me know by Thursday!",why:'Internal coworker; normal request, no links.'},
+  {lvl:1,scam:0,from:'Amazon',addr:'ship@amazon.com',txt:"Your 'Rubber Duck (500 pack)' has shipped, arriving Tuesday.",why:'Real amazon.com; matches an order, asks nothing.'},
+  {lvl:1,scam:0,from:'Spotify',addr:'no-reply@spotify.com',txt:"Your June Wrapped is here! Tap to see your top songs. No login needed.",why:'Real spotify.com; no credentials asked.'},
+  {lvl:1,scam:0,from:'Mom',addr:'Mom ❤️',txt:"did you eat? the dog opened the fridge again 🐕 call me when free 💕",why:"It's literally your mom; no links or money."},
+  // ---- Tier 2: subtle ----
+  {lvl:2,scam:1,from:'Microsoft 365',addr:'account-security@microsoftsupport-team.com',txt:"Unusual sign-in detected. Review your activity within 12 hours or your mailbox is suspended.",why:'Real Microsoft mail comes from microsoft.com — not "microsoftsupport-team.com".'},
+  {lvl:2,scam:1,from:'PayPal',addr:'secure.paypal.com.account-verify.net',txt:"We limited your account. Confirm your details to restore access.",why:'Subdomain trick — the REAL domain is account-verify.net, not paypal.com.'},
+  {lvl:2,scam:1,from:'Apple Support',addr:'noreply@apple.id-appleid.com',txt:"Your Apple ID is locked due to suspicious activity. Verify now.",why:'Lookalike domain — the real site is appleid.apple.com.'},
+  {lvl:2,scam:1,from:'Netflix Billing',addr:'billing@netflix.com.co',txt:"Your payment failed. Update your card to avoid cancellation.",why:'".com.co" is a different domain — not netflix.com.'},
+  {lvl:2,scam:1,from:'HR Department',addr:'hr@company-payroll-portal.com',txt:"Annual benefits update: confirm your bank account for direct deposit here.",why:'Outside domain posing as internal HR + asks for bank details.'},
+  {lvl:2,scam:1,from:'DocuSign',addr:'dse@docu-sign-files.com',txt:"You have a document waiting. Click to review and sign.",why:'Real DocuSign uses docusign.net — not "docu-sign-files.com".'},
+  {lvl:2,scam:0,from:'Google',addr:'no-reply@accounts.google.com',txt:"Security alert: new sign-in on Windows. If this was you, no action needed.",why:'Real accounts.google.com; it informs you and asks for nothing.'},
+  {lvl:2,scam:0,from:'LinkedIn',addr:'messages-noreply@linkedin.com',txt:"You have 3 new messages and 2 connection requests.",why:'Genuine linkedin.com notification; no credentials requested.'},
+  {lvl:2,scam:0,from:'Chase',addr:'alerts@chase.com',txt:"Did you make a $432.10 purchase at BestBuy? Reply YES or NO.",why:'Real bank fraud-alert pattern from chase.com; no login or details asked.'},
+  {lvl:2,scam:0,from:'IT Helpdesk',addr:'it-helpdesk@megacorp.com',txt:"Scheduled maintenance this Saturday 2–4am. No action needed.",why:'Internal domain, informational, asks for nothing.'},
+  // ---- Tier 3: expert ----
+  {lvl:3,scam:1,from:'PayPal Service',addr:'service@pаypal.com',txt:"Receipt: you sent $750.00. Didn't authorize this? Cancel the payment now.",why:'Homoglyph — the "а" is a Cyrillic letter; this is NOT the real paypal.com.'},
+  {lvl:3,scam:1,from:'Accounts Payable',addr:'accounts@vendor-payments.com',txt:"RE: Q3 invoice — per our call, please send payment to our updated bank account today.",why:'Invoice/BEC fraud: an unexpected bank-detail change + urgency from an outside domain.'},
+  {lvl:3,scam:1,from:'Security',addr:'security@account-approve.app',txt:"Approve sign-in request? Tap APPROVE to confirm it's you.",why:'MFA-fatigue push from an unknown app domain — a login you never started.'},
+  {lvl:3,scam:1,from:'USPS',addr:'+1 (415) 555-0132',txt:"USPS: your package can't be delivered. Update your address: bit.ly/usps-fix",why:"Carriers don't text bit.ly links asking for an \"address fix\"."},
+  {lvl:3,scam:1,from:'Jordan (CEO)',addr:'jordan.blake.ceo@gmail.com',txt:"In a meeting, can't call. Need a quick wire transfer handled — keep it between us.",why:'Boss impersonation from a personal Gmail + secrecy + urgent payment = BEC.'},
+  {lvl:3,scam:1,from:'Google Drive',addr:'no-reply@google-drive-storage.com',txt:"Your storage is full. Upgrade now to keep receiving emails.",why:'Real Google uses google.com — "google-drive-storage.com" is fake.'},
+  {lvl:3,scam:0,from:'Stripe',addr:'receipts@stripe.com',txt:"Receipt for your $20.00 payment to Acme Co. View it in your dashboard.",why:'Genuine stripe.com receipt that matches a real charge; nothing requested.'},
+  {lvl:3,scam:0,from:'GitHub',addr:'noreply@github.com',txt:"We found one of your tokens in a public repo and revoked it automatically.",why:'Alarming but real github.com notice — it asks you for nothing.'},
+  {lvl:3,scam:0,from:'Namecheap',addr:'support@namecheap.com',txt:"Your domain renews in 7 days. Manage auto-renew in your account.",why:'Legitimate registrar reminder from namecheap.com; no credentials asked.'},
+  {lvl:3,scam:0,from:'Authenticator',addr:'32665',txt:"Your verification code is 481920. Never share this code with anyone.",why:'Standard 2FA code from a short code; it warns you NOT to share it.'},
+ ];
+ let st;
+ function start(){
+   const day=G.day, maxTier=day<=1?1:(day===2?2:3);
+   const total=Math.min(12,8+(day-1)*2), dur=Math.max(3,7-(day-1)), maxS=day<=2?3:2;
+   const q=pickRound(maxTier,total);
+   st={ q, idx:0, correct:0, strikes:0, maxS, total:q.length, dur, busy:false, deadline:0, over:false, tier:maxTier, review:[] };
+   const tierName=['','Rookie','Analyst','Expert'][maxTier];
+   stage.innerHTML=`<div id="dtWrap">
+     <div class="intentBig" style="background:linear-gradient(135deg,#ffd23f,#ff7a5c);color:#3a1a10">🔍 Inbox triage — is each message a <b>SCAM</b> or <b>LEGIT</b>? Check the sender &amp; wording, then call it before the timer.</div>
+     <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:14px;margin-bottom:8px">
+       <span id="dtStrk"></span><span style="color:var(--cyan);font-size:12.5px">🎚️ ${tierName} · ${dur}s</span><span id="dtProg">1 / ${q.length}</span><span id="dtScore">✓ 0</span></div>
+     <div class="bar" style="margin-bottom:12px"><div class="barfill" id="dtTime" style="width:100%;background:linear-gradient(90deg,#3ee37a,#ffd23f)"></div></div>
+     <div id="dtBoard" style="position:relative;border:2px solid rgba(255,255,255,.18);border-radius:16px;background:radial-gradient(circle at 50% 30%,#1d1448,#0d0822);padding:14px">
+       <div id="dtCard"></div>
+       <div id="dtFb" style="min-height:40px;margin-top:10px;font-size:13px;font-weight:700;text-align:center;line-height:1.45"></div>
+     </div>
+     <div class="row" style="margin-top:12px">
+       <button class="btn" id="dtScam" style="flex:1;font-size:18px;padding:16px;background:linear-gradient(180deg,#ff6b8a,#e6324f);box-shadow:0 6px 0 #b01f38">🚫 SCAM</button>
+       <button class="btn" id="dtLegit" style="flex:1;font-size:18px;padding:16px;background:linear-gradient(180deg,#54e88a,#1bb85a);color:#063;box-shadow:0 6px 0 #128a42">✅ LEGIT</button>
+     </div>
+     <div style="text-align:center;font-size:12px;opacity:.7;margin-top:8px">${maxS} wrong calls = fail.</div>
+   </div>`;
+   $('dtScam').onclick=()=>answer(1); $('dtLegit').onclick=()=>answer(0);
+   G.current={cleanup(){ st.over=true; }, pause(){ if(G.raf){cancelAnimationFrame(G.raf);G.raf=0;} }, resume(dur){ st.deadline+=(dur||0); loop(); }};
+   updateTop(); load(); loop();
+ }
+ function pickRound(maxTier,total){
+   const pool=MSGS.filter(m=>m.lvl<=maxTier);
+   const weighted=[]; pool.forEach(m=>{ const w=m.lvl===maxTier?3:(m.lvl===maxTier-1?2:1); for(let i=0;i<w;i++)weighted.push(m); });
+   const picks=[], seen=new Set();
+   for(const m of shuffle(weighted)){ if(seen.has(m))continue; seen.add(m); picks.push(m); if(picks.length>=total)break; }
+   if(!picks.some(m=>m.scam)||!picks.some(m=>!m.scam)) return shuffle(pool).slice(0,total);
+   return shuffle(picks);
+ }
+ function load(){ const m=st.q[st.idx % st.q.length];
+   const kn = m.k||(m.addr==='pop-up'?'popup':(m.addr.includes('@')?'email':(/[a-z]\.[a-z]{2,}$/i.test(m.addr)?'email':'text'))), kl = kn==='email'?'EMAIL':(kn==='popup'?'POP-UP':'TEXT');
+   $('dtCard').innerHTML=`<div style="background:linear-gradient(165deg,#fff,#eee9ff);color:#1a1030;border-radius:18px;padding:16px;box-shadow:0 10px 26px rgba(0,0,0,.4)">
+     <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#a96bff;margin-bottom:6px">${ICON(kn,18,'#a96bff')} ${kl}</div>
+     <div style="font-size:15px;font-weight:800">From: ${m.from}</div>
+     <div style="font-size:12.5px;color:#8a7caa;margin-bottom:10px;word-break:break-all">&lt;${m.addr}&gt;</div>
+     <div style="font-size:14.5px;line-height:1.55;color:#3a2c5a">${m.txt}</div></div>`;
+   $('dtFb').textContent=''; $('dtProg').textContent=(st.idx+1)+' / '+st.total;
+   st.busy=false; st.deadline=performance.now()+st.dur*1000;
+ }
+ function loop(){ if(st.over)return;
+   if(!st.busy){ const rem=Math.max(0,(st.deadline-performance.now())/1000); const f=$('dtTime');
+     if(f){ f.style.width=(rem/st.dur*100)+'%'; f.style.background=rem<st.dur*0.3?'linear-gradient(90deg,#ff4d6d,#ffd23f)':'linear-gradient(90deg,#3ee37a,#ffd23f)'; }
+     if(rem<=0) answer(-1); }
+   G.raf=requestAnimationFrame(loop); }
+ function answer(said){ if(st.busy||st.over)return; st.busy=true; const m=st.q[st.idx % st.q.length];
+   const correct = said!==-1 && (said===m.scam);
+   st.review.push({from:m.from,scam:m.scam,why:m.why,said,correct});
+   const a=$('app').getBoundingClientRect(), c=$('dtCard').getBoundingClientRect();
+   if(correct){ st.correct++; Snd.good(); popN('✓',c.left-a.left+c.width/2,c.top-a.top+30,'#3ee37a',1.3);
+     $('dtFb').innerHTML=`<span style="color:#3ee37a">✓ Correct!</span> ${m.why}`; }
+   else { st.strikes++; Snd.bad(); flash('red'); shakeStage();
+     $('dtFb').innerHTML=`<span style="color:#ff4d6d">✗ ${said===-1?'Too slow!':'Wrong!'}</span> It was ${m.scam?'a SCAM':'LEGIT'}. ${m.why}`; }
+   updateTop();
+   if(st.strikes>=st.maxS){ st.over=true; setTimeout(()=>showRecap(false),1100); return; }
+   if(st.idx+1>=st.total){ st.over=true; setTimeout(()=>showRecap(true),1100); return; }
+   setTimeout(()=>{ st.idx++; load(); },1300);
+ }
+ function showRecap(won){
+   const missed=st.review.filter(r=>!r.correct);
+   const bonus=180+st.correct*15+(st.maxS-st.strikes)*25+(st.tier-1)*60;
+   const body = missed.length
+     ? missed.map(r=>`<div style="background:rgba(255,77,109,.12);border:1.5px solid rgba(255,77,109,.4);border-radius:12px;padding:9px 11px;margin-bottom:8px;text-align:left">
+         <div style="font-weight:800;font-size:13px;color:#ffd23f">${r.said===-1?'⌛ Too slow':'✗ You said '+(r.said?'SCAM':'LEGIT')} — it was ${r.scam?'🚫 SCAM':'✅ LEGIT'}</div>
+         <div style="font-size:12.5px;opacity:.9;margin-top:3px">From <b>${r.from}</b>: ${r.why}</div></div>`).join('')
+     : `<div style="background:rgba(62,227,122,.14);border:1.5px solid rgba(62,227,122,.5);border-radius:12px;padding:16px;font-weight:800;font-size:15px">🎯 Flawless read — every call correct!</div>`;
+   stage.innerHTML=`<div id="dtWrap">
+     <div class="intentBig" style="background:linear-gradient(135deg,${won?'#3ee37a,#36e3ff':'#ff6b8a,#b81543'});${won?'color:#063':''}">${won?'✅ Inbox cleared!':'🚨 Too many got through'} · ${st.correct}/${st.total} correct</div>
+     <div style="font-size:13px;font-weight:800;opacity:.85;text-align:center;margin-bottom:10px">${missed.length?'📒 Review — tells you missed:':'Nothing missed — nice work.'}</div>
+     <div style="max-height:46vh;overflow:auto;padding-right:2px">${body}</div>
+     <button class="play" id="dtNext" style="margin-top:14px">▶ CONTINUE</button>
+   </div>`;
+   $('dtNext').onclick=()=>{ if(won) winLevel(bonus); else failLevel('Too many wrong calls — the scammers got through'); };
+ }
+ function updateTop(){ $('dtStrk').textContent='❤️'.repeat(Math.max(0,st.maxS-st.strikes))+'🖤'.repeat(st.strikes); $('dtScore').textContent='✓ '+st.correct; }
+ return {start};
+})();
+
+/* ============================================================
+   LEVEL 4 — SPOT THE FAKE
+============================================================ */
+const SP=(()=>{
+ const LAYOUTS=[
+  // ---- Tier 1: obvious ----
+  { lvl:1, tells:6, html:`<div class="email">
+     <div class="hd"><span class="logo">Arnaz0n</span><span class="hot" data-why="Brand misspelled (Arnaz0n with a zero)">⚠️</span>
+       <div style="font-size:13px;margin-top:6px">From: <span class="hot" data-why="Fake look-alike domain">orders@arnaz0n-support.info</span></div></div>
+     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Your account will be <span class="hot" data-why="Scare tactic / fake urgency">CLOSED in 24 hours</span>!</div>
+     <div>Dear <span class="hot" data-why="Generic greeting, not your name">Valued Costumer</span>,<br>
+     Order <span class="decoy" data-why="An order number by itself isn't a red flag.">#A1029-77</span> could not be verified. <span class="hot" data-why="No real company asks for your full password by email">Reply with your password</span> to keep your account active.</div>
+     <span class="fakebtn hot" data-why="Suspicious button hiding the real link">Verify Account Now</span>
+     <div style="font-size:11px;color:#888;margin-top:8px"><span class="decoy" data-why="An unsubscribe link is normal in real email.">Unsubscribe</span> · Help Center</div></div>` },
+  { lvl:1, tells:5, html:`<div class="email">
+     <div class="hd"><span class="logo">PayPa1</span><span class="hot" data-why="'PayPa1' uses a digit 1, not an L">⚠️</span>
+       <div style="font-size:13px;margin-top:6px">From: <span class="hot" data-why="Random unofficial domain">security@paypa1-team.xyz</span></div></div>
+     <div style="font-size:15px;font-weight:800;margin-bottom:6px"><span class="hot" data-why="Fake urgency to make you panic">URGENT: act within 1 hour</span></div>
+     <div>We noticed a login from <span class="decoy" data-why="A device/location line is common in real alerts.">Chrome on Windows</span>. Confirm your
+     <span class="hot" data-why="Nobody legit asks for your card PIN">card number and PIN</span> immediately.</div>
+     <span class="fakebtn hot" data-why="Button masks a malicious link">Secure My Account</span>
+     <div style="font-size:11px;color:#888;margin-top:8px"><span class="decoy" data-why="A mailing address is standard footer text — not a tell on its own.">PayPal, San Jose CA</span></div></div>` },
+  // ---- Tier 2: subtle ----
+  { lvl:2, tells:5, html:`<div class="email">
+     <div class="hd"><span class="logo" style="color:#5b5bd6">Micros0ft 365</span><span class="hot" data-why="Brand misspelled with a zero (Micros0ft)">⚠️</span>
+       <div style="font-size:13px;margin-top:6px">From: <span class="hot" data-why="Not microsoft.com — a lookalike support domain">account-team@micros0ft-security.com</span></div></div>
+     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Unusual activity detected</div>
+     <div>Dear <span class="hot" data-why="Generic greeting instead of your name">User</span>,<br>
+     Verify your mailbox <span class="hot" data-why="Artificial deadline to rush you">within 12 hours</span> or it will be suspended.<br>
+     Review here: <span class="hot" data-why="Link points to the fake lookalike domain">micros0ft-security.com/verify</span></div>
+     <span class="fakebtn" style="background:#5b5bd6"><span class="decoy" data-why="The button label is generic — the real giveaway is the LINK it points to.">Review activity</span></span>
+     <div style="font-size:11px;color:#888;margin-top:8px"><span class="decoy" data-why="A case/reference number is normal corporate formatting.">Case #MS-48213</span> · Microsoft Corporation</div></div>` },
+  { lvl:2, tells:4, html:`<div class="email">
+     <div class="hd"><span class="logo" style="color:#1166aa">Chase</span>
+       <div style="font-size:13px;margin-top:6px">From: <span class="hot" data-why="Subdomain trick — the real domain is account-update.info">secure@chase.com.account-update.info</span></div></div>
+     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Your account is <span class="hot" data-why="Scare tactic to pressure you">temporarily limited</span></div>
+     <div>To restore access, confirm your <span class="hot" data-why="Banks never ask for your SSN + full card by email">SSN and card number</span>.<br>
+     <span class="decoy" data-why="'Member FDIC' is real banking boilerplate — not a tell.">Member FDIC.</span> Questions? <span class="decoy" data-why="A support phone number alone isn't a red flag.">1-800-935-9935</span></div>
+     <span class="fakebtn hot" data-why="Button links to the fake domain">Restore Access</span></div>` },
+  // ---- Tier 3: expert ----
+  { lvl:3, tells:4, html:`<div class="email">
+     <div class="hd"><span class="logo" style="color:#333;font-family:Nunito;font-size:18px">✉ Jordan Blake</span>
+       <div style="font-size:13px;margin-top:6px">From: Jordan Blake (CEO) &lt;<span class="hot" data-why="The CEO's name, but a personal Gmail — not the company domain">jordan.blake@gmail.com</span>&gt;</div></div>
+     <div style="margin-top:4px">Hi,<br>
+     I'm <span class="decoy" data-why="Being busy is normal — not proof of phishing by itself.">stuck in a meeting</span> and can't take calls.<br>
+     I need you to <span class="hot" data-why="Unexpected urgent payment request = classic CEO/BEC fraud">process a wire transfer</span> to a new vendor today.<br>
+     Please <span class="hot" data-why="Pressure to bypass checks and stay silent is a huge red flag">keep this between us</span> — <span class="hot" data-why="Manufactured time pressure">need it done within the hour.</span><br>
+     <span class="decoy" data-why="'Sent from my iPhone' is common and trivially faked — proves nothing.">Sent from my iPhone</span></div></div>` },
+  { lvl:3, tells:3, html:`<div class="email">
+     <div class="hd"><span class="logo">PayPaI</span>
+       <div style="font-size:13px;margin-top:6px">From: service@<span class="hot" data-why="Capital i — 'paypaI.com' impersonating paypal.com">paypaI.com</span></div></div>
+     <div style="font-size:15px;font-weight:800;margin-bottom:6px">Receipt: payment sent</div>
+     <div>You sent <span class="decoy" data-why="An amount alone isn't suspicious.">$750.00</span> to TechMart.<br>
+     Didn't authorize this? <span class="hot" data-why="Bait designed to panic you into clicking">Cancel the payment</span> here:
+     <span class="hot" data-why="Link uses the fake paypaI.com domain">paypaI.com/cancel</span><br>
+     <span class="decoy" data-why="A real mailing address is normal footer text.">PayPal, 2211 N First St, San Jose</span> ·
+     <span class="decoy" data-why="A transaction ID is standard receipt formatting.">Txn 4F9-22A</span></div></div>` },
+ ];
+ let st;
+ function start(){ const day=G.day, maxTier=day<=1?1:(day===2?2:3);
+   const pool=LAYOUTS.filter(l=>l.lvl<=maxTier);
+   const weighted=[]; pool.forEach(l=>{ const w=l.lvl===maxTier?3:(l.lvl===maxTier-1?2:1); for(let i=0;i<w;i++)weighted.push(l); });
+   const L=weighted[Math.floor(Math.random()*weighted.length)];
+   const time=Math.max(14,30-(day-1)*4), patience=day<=1?4:(day<=3?3:2);
+   const tierName=['','Rookie','Analyst','Expert'][maxTier];
+   st={L,found:0,total:L.tells,patience,time,timer:null,elapsed:0,over:false};
+   stage.innerHTML=`<div id="spWrap">
+     <div class="intentBig" style="background:linear-gradient(135deg,#36e3ff,#a96bff)">🕵️ This message is a <b>phishing fake</b>. Tap every real red flag — but some things only look shady. Wrong taps cost ❤️.</div>
+     <div class="spTop"><span id="spFound">🔍 0/${L.tells} tells</span><span style="color:var(--cyan);font-size:12.5px">🎚️ ${tierName}</span><span id="spPat">❤️ ${patience}</span></div>
+     <div class="bar" style="margin-bottom:10px"><div class="barfill" id="spTime" style="width:100%;background:linear-gradient(90deg,#3ee37a,#ffd23f)"></div></div>
+     <div id="spBoard" style="position:relative;border:2px solid rgba(255,255,255,.18);border-radius:16px;background:radial-gradient(circle at 50% 30%,#1d1448,#0d0822);padding:14px">${L.html}</div>
+     <div style="font-size:12.5px;opacity:.7;text-align:center;margin-top:10px">Tap the real red flags. Some safe-looking items are traps for the over-cautious.</div></div>`;
+   stage.querySelectorAll('.hot').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();hit(el);}));
+   stage.querySelectorAll('.decoy').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();miss(el);}));
+   stage.querySelector('.email').addEventListener('click',()=>miss(null));
+   st.elapsed=0; let spLast=Date.now();
+   st.timer=setInterval(()=>{ const now=Date.now(), dt=(now-spLast)/1000; spLast=now;
+     if(G.paused)return;
+     st.elapsed+=dt; const el=Math.max(0,st.time-st.elapsed); $('spTime').style.width=(el/st.time*100)+'%';
+     if(el<=0){ clearInterval(st.timer); st.over=true; setTimeout(()=>showRecap(false,'Ran out of time'),300); } },100); G.timers.push(st.timer);
+   G.current={cleanup(){ if(st.timer)clearInterval(st.timer); }, pause(){}, resume(){ spLast=Date.now(); }};
+ }
+ function hit(el){ if(st.over||el.classList.contains('found'))return; el.classList.add('found'); Snd.coin(); st.found++; $('spFound').textContent=`🔍 ${st.found}/${st.total} tells`;
+   const p=document.createElement('div'); p.className='findpop'; p.textContent=el.dataset.why; el.appendChild(p); setTimeout(()=>p.remove(),1800);
+   const r=el.getBoundingClientRect(),a=$('app').getBoundingClientRect(); popN('✓',r.left-a.left+r.width/2,r.top-a.top,'#3ee37a',1.2);
+   if(st.found>=st.total){ st.over=true; clearInterval(st.timer); setTimeout(()=>showRecap(true),520); } }
+ function miss(el){ if(st.over)return;
+   if(el&&el.classList.contains('decoy')){ if(el.classList.contains('ok'))return; el.classList.add('ok');
+     const p=document.createElement('div'); p.className='findpop'; p.style.background='#7a5410'; p.textContent='Safe: '+el.dataset.why; el.appendChild(p); setTimeout(()=>p.remove(),2000);
+     const r=el.getBoundingClientRect(),a=$('app').getBoundingClientRect(); popN('✗',r.left-a.left+r.width/2,r.top-a.top,'#ffb020',1.1); }
+   st.patience--; Snd.bad(); flash('red'); shakeStage(); $('spPat').textContent='❤️ '+Math.max(0,st.patience);
+   if(st.patience<=0){ st.over=true; clearInterval(st.timer); setTimeout(()=>showRecap(false,'Too many wrong clicks'),420); } }
+ function showRecap(won,reason){
+   const hots=[...stage.querySelectorAll('#spBoard .hot')];
+   const missed=hots.filter(h=>!h.classList.contains('found')).map(h=>h.dataset.why);
+   const foundN=hots.filter(h=>h.classList.contains('found')).length;
+   const wrong=[...stage.querySelectorAll('#spBoard .decoy.ok')].map(d=>d.dataset.why);
+   const bonus=220+Math.ceil(parseFloat($('spTime').style.width||'0'))+(st.L.lvl-1)*60;
+   let body='';
+   missed.forEach(w=>{ body+=`<div style="background:rgba(255,77,109,.12);border:1.5px solid rgba(255,77,109,.4);border-radius:12px;padding:9px 11px;margin-bottom:8px;text-align:left"><b style="color:#ff8fa6">✗ Missed red flag:</b> ${w}</div>`; });
+   wrong.forEach(w=>{ body+=`<div style="background:rgba(255,176,32,.12);border:1.5px solid rgba(255,176,32,.45);border-radius:12px;padding:9px 11px;margin-bottom:8px;text-align:left"><b style="color:#ffd23f">⚠ You flagged a safe item:</b> ${w}</div>`; });
+   if(!body) body=`<div style="background:rgba(62,227,122,.14);border:1.5px solid rgba(62,227,122,.5);border-radius:12px;padding:16px;font-weight:800;font-size:15px">🎯 Perfect sweep — found every flag and fell for no traps!</div>`;
+   stage.innerHTML=`<div id="spWrap">
+     <div class="intentBig" style="background:linear-gradient(135deg,${won?'#3ee37a,#36e3ff':'#ff6b8a,#b81543'});${won?'color:#063':''}">${won?'✅ Fake busted!':'🚨 '+reason} · ${foundN}/${st.total} flags found</div>
+     <div style="font-size:13px;font-weight:800;opacity:.85;text-align:center;margin-bottom:10px">📒 Round review</div>
+     <div style="max-height:46vh;overflow:auto;padding-right:2px">${body}</div>
+     <button class="play" id="spNext" style="margin-top:14px">▶ CONTINUE</button>
+   </div>`;
+   $('spNext').onclick=()=>{ if(won) winLevel(bonus); else failLevel(reason); };
+ }
+ return {start};
+})();
+
+/* ===== UTIL ===== */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ===== MENU / FREE PLAY ===== */
+const ICONS={
+ tower:'<svg viewBox="0 0 24 24"><polygon class="st" points="12,3 20,8 20,17 12,22 4,17 4,8"/><circle class="fl" cx="12" cy="12" r="3"/></svg>',
+ firewall:'<svg viewBox="0 0 24 24"><rect class="st" x="3" y="5" width="18" height="14" rx="1.5"/><line class="st" x1="3" y1="12" x2="21" y2="12"/><line class="st" x1="9" y1="5" x2="9" y2="12"/><line class="st" x1="15" y1="12" x2="15" y2="19"/><line class="st" x1="12" y1="5" x2="12" y2="12"/></svg>',
+ scan:'<svg viewBox="0 0 24 24"><circle class="st" cx="11" cy="11" r="7"/><line class="st" x1="16" y1="16" x2="21" y2="21"/></svg>',
+ target:'<svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="8"/><circle class="st" cx="12" cy="12" r="3"/><line class="st" x1="12" y1="1" x2="12" y2="5"/><line class="st" x1="12" y1="19" x2="12" y2="23"/><line class="st" x1="1" y1="12" x2="5" y2="12"/><line class="st" x1="19" y1="12" x2="23" y2="12"/></svg>',
+ email:'<svg viewBox="0 0 24 24"><rect class="st" x="3" y="5" width="18" height="14" rx="2"/><path class="st" d="M3 7l9 6 9-6"/></svg>',
+ text:'<svg viewBox="0 0 24 24"><path class="st" d="M4 5h16v11H9l-4 3v-3H4z"/></svg>',
+ popup:'<svg viewBox="0 0 24 24"><rect class="st" x="3" y="4" width="18" height="16" rx="2"/><line class="st" x1="3" y1="9" x2="21" y2="9"/><circle class="fl" cx="6.5" cy="6.5" r="1"/></svg>',
+ hex6:'<svg viewBox="0 0 24 24"><polygon class="st" points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5"/><circle class="fl" cx="12" cy="12" r="2.4"/></svg>',
+ sq4:'<svg viewBox="0 0 24 24"><polygon class="st" points="12,3 21,12 12,21 3,12"/><circle class="fl" cx="12" cy="12" r="2.4"/></svg>',
+ tri3:'<svg viewBox="0 0 24 24"><polygon class="st" points="12,4 20,19 4,19"/><circle class="fl" cx="12" cy="14" r="2.2"/></svg>',
+ pen:'<svg viewBox="0 0 24 24"><path class="st" d="M4 20h4L18 10l-4-4L4 16z"/><line class="st" x1="13.5" y1="6.5" x2="17.5" y2="10.5"/></svg>',
+ trophy:'<svg viewBox="0 0 24 24"><path class="st" d="M7 4h10v5a5 5 0 0 1-10 0z"/><path class="st" d="M7 6H4v2a3 3 0 0 0 3 3"/><path class="st" d="M17 6h3v2a3 3 0 0 1-3 3"/><line class="st" x1="12" y1="14" x2="12" y2="17"/><path class="st" d="M10 17h4v3h-4z"/><line class="st" x1="8" y1="20" x2="16" y2="20"/></svg>',
+ sound:'<svg viewBox="0 0 24 24"><polygon class="st" points="4,9 8,9 13,5 13,19 8,15 4,15"/><path class="st" d="M16 8.5a5 5 0 0 1 0 7"/><path class="st" d="M18.5 6a8 8 0 0 1 0 12"/></svg>',
+ mute:'<svg viewBox="0 0 24 24"><polygon class="st" points="4,9 8,9 13,5 13,19 8,15 4,15"/><line class="st" x1="16.5" y1="9.5" x2="21" y2="14"/><line class="st" x1="21" y1="9.5" x2="16.5" y2="14"/></svg>'
+};
+const LVICON={1:'tower',2:'firewall',3:'scan',4:'target'};
+const LVCOLOR={1:'#3ee37a',2:'#a96bff',3:'#ffd23f',4:'#36e3ff'};
+function ICON(name,size,color){ return `<span class="nicon" style="width:${size}px;height:${size}px;color:${color||'currentColor'};display:inline-flex;vertical-align:middle">${ICONS[name]||''}</span>`; }
+function buildPicker(){ const g=$('selGrid'); if(!g)return; g.innerHTML='';
+   const accent={1:'linear-gradient(160deg,#3ee37a,#36e3ff)',2:'linear-gradient(160deg,#a96bff,#ff5db1)',3:'linear-gradient(160deg,#ffd23f,#ff7a5c)',4:'linear-gradient(160deg,#36e3ff,#a96bff)'};
+   [1,2,3,4].forEach(i=>{ const d=document.createElement('button'); d.className='btn';
+   d.style.cssText='background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:2px solid rgba(255,255,255,.25);padding:14px 8px;text-align:center;line-height:1.25;color:#fff';
+   d.innerHTML=`<div style="width:74px;height:74px;margin:0 auto 8px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:${accent[i]};box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 24px rgba(255,255,255,.12)">${ICON(LVICON[i],42,'#fff')}</div><div style="font-weight:800;font-size:15px">${LV[i].n}</div><div style="font-size:11px;opacity:.7;margin-top:2px">tap to play</div>`;
+   d.onclick=()=>startFree(i); g.appendChild(d); }); }
+function showHome(s){ const h=$('back'); if(h)h.classList.toggle('hide',!s); }
+function showSelect(){ cleanup(); hideOvs(); showHome(false); buildPicker(); loadRun(); $('ovStart').classList.remove('hide'); }
+function startFree(i){ G.mode='free'; G.level=i; G.lives=3; hideOvs(); hud(); intro(); }
+function resultFree(win,title,msg){ cleanup(); hideOvs(); $('resTitle').textContent=title; $('resTitle').style.color=win?'var(--lime)':'var(--red)'; $('resMsg').textContent=msg; $('resLives').textContent=''; $('bCont').textContent='🎮 BACK TO MENU'; $('bCont').onclick=showSelect; $('ovResult').classList.remove('hide'); }
+
+/* ===== BOOT ===== */
+if(!$('home')){ const hb=document.createElement('button'); hb.id='home'; hb.className='hide'; hb.textContent='🏠 Menu';
+  hb.style.cssText='position:absolute;top:12px;left:14px;z-index:60;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:5px 9px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:700';
+  const ap=$('app'); if(ap)ap.appendChild(hb); }
+function on(id,fn){ const el=$(id); if(el)el.onclick=fn; }
+on('bStart',()=>{ const nm=(($('pname')&&$('pname').value)||'').trim().slice(0,14); G.name=nm||'Player'; try{window.storage.set('pname',G.name);}catch(e){} G.mode='campaign'; Music.start(); newGame(); });
+on('bRestart',()=>{ G.mode='campaign'; newGame(); });
+on('bGo',()=>{ showHome(true); go(); });
+/* ===== PAUSE / QUIT ===== */
+function gameActive(){ return !!G.current; }
+function pauseGame(){ if(G.paused||!gameActive())return; G.paused=true; G.pauseStart=performance.now();
+  Music.stop(); if(G.current.pause)G.current.pause();
+  $('pauseStats').innerHTML=`${G.mode==='campaign'?'Day '+G.day+' · ':''}Level ${G.level}: ${ICON(LVICON[G.level],15,LVCOLOR[G.level])} ${LV[G.level].n}<br>Score so far: <b style="color:var(--yellow)">${G.score.toLocaleString()}</b>`;
+  const camp=G.mode==='campaign';
+  $('pauseSub').textContent=camp?'Quit now and your run is saved ⏸️':'Take a breather — the game is frozen ⏸️';
+  $('bQuitYes').textContent=camp?'🚪 Save & Quit':'🚪 Quit to Menu';
+  $('pauseNote').textContent=camp?'Your run is saved — tap Continue on the menu to resume this day.':"Quitting returns you to the menu (single games aren't saved).";
+  $('ovPause').classList.remove('hide'); }
+function resumeGame(){ if(!G.paused){ $('ovPause').classList.add('hide'); return; }
+  const dur=performance.now()-G.pauseStart; G.paused=false; $('ovPause').classList.add('hide');
+  if(Snd.get())Music.start(); if(G.current&&G.current.resume)G.current.resume(dur); }
+function requestQuit(){ if(gameActive())pauseGame(); else showSelect(); }
+function confirmQuit(){ G.paused=false; $('ovPause').classList.add('hide'); if(G.mode==='campaign')submitScore(); showSelect(); }
+
+on('home',requestQuit);
+on('back',requestQuit);
+on('bResume',resumeGame);
+on('bContinue',continueRun);
+on('bBoard',showBoard);
+on('bBoardBack',showSelect);
+on('bQuitYes',confirmQuit);
+on('bWinMenu',showSelect);
+on('bOverMenu',showSelect);
+on('sound',()=>{ const o=!Snd.get(); Snd.set(o); Music.setOn(o); if(o&&!G.paused)Music.start(); $('sound').innerHTML=o?ICON('sound',18,'#36e3ff'):ICON('mute',18,'#8a7caa'); });
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ if(!$('ovPause').classList.contains('hide'))resumeGame(); else if(gameActive())pauseGame(); return; }
+  if(e.key==='Enter'||e.key===' '){
+    if(!$('ovPause').classList.contains('hide')){ resumeGame(); return; }
+    if(!$('ovIntro').classList.contains('hide'))$('bGo').click();
+    else if(!$('ovResult').classList.contains('hide'))$('bCont').click();
+    else if(!$('ovOver').classList.contains('hide')){G.mode='campaign';newGame();}
+  }
+});
+function unlockAudio(){ try{ Music.start(); Snd.click(); }catch(e){} }
+window.addEventListener('pointerdown',unlockAudio,{once:true});
+buildPicker(); hud(); loadBest(); loadRun();
+$('penIcon').innerHTML=ICONS.pen;
+$('sound').innerHTML=ICON('sound',18,'#36e3ff');
+$('bBoard').innerHTML=ICON('trophy',17,'#ffd23f')+' Leaderboard';
+{ const h=document.querySelector('#ovBoard h2'); if(h)h.innerHTML=ICON('trophy',30,'#ffd23f')+' LEADERBOARD'; }
+(async()=>{ try{ const r=await window.storage.get('pname'); if(r&&r.value){ G.name=r.value; const pn=$('pname'); if(pn)pn.value=r.value; } }catch(e){}
+  try{ const d=await window.storage.get('did'); if(d&&d.value)G.did=d.value; else ensureDid(); }catch(e){ ensureDid(); } })();
+</script>
+</body>
+</html>
