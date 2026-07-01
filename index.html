@@ -91,6 +91,7 @@ body{ font-family:'Nunito','Segoe UI',sans-serif; font-weight:600; color:#fff; o
 /* overlays */
 .ov{ position:absolute; inset:0; z-index:40; display:flex; flex-direction:column; padding:22px; overflow-y:auto; background:rgba(22,9,46,.95); backdrop-filter:blur(7px); }
 .ovc{ margin:auto; width:100%; max-width:470px; text-align:center; }
+#ovStart{ background:#060A30; background-image:radial-gradient(circle at 18% 0%,#12184F,transparent 55%),radial-gradient(circle at 85% 12%,#1E2978,transparent 45%),linear-gradient(160deg,#0b1240,#060A30 72%); }
 .hide{ display:none !important; }
 .logo-big{ font-family:'Luckiest Guy'; font-size:clamp(46px,13vw,76px); line-height:1; background:linear-gradient(90deg,var(--pink),var(--yellow),var(--cyan),var(--lime)); background-size:300%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:rainbow 4s linear infinite; filter:drop-shadow(0 4px 16px rgba(255,93,177,.4)); }
 @keyframes rainbow{ to{ background-position:300% 0;}}
@@ -172,14 +173,14 @@ body{ font-family:'Nunito','Segoe UI',sans-serif; font-weight:600; color:#fff; o
 
   <!-- START / MENU -->
   <div class="ov" id="ovStart"><div class="ovc">
-    <div class="logo-big">CYBER<br>ARCADE</div>
+    <div class="logo-big" style="background-image:linear-gradient(90deg,#01B1E9,#37CEFD,#5661D7,#CA56D7)">CYBER<br>ARCADE</div>
     <div class="tag">🛡️ 4 Security Games in 1 🛡️</div>
     <div style="position:relative;width:100%;max-width:300px;margin:0 auto 14px">
-      <span id="penIcon" class="nicon" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#a96bff;pointer-events:none"></span>
+      <span id="penIcon" class="nicon" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#01B1E9;pointer-events:none"></span>
       <input id="pname" maxlength="14" placeholder="Enter your name" style="width:100%;padding:12px 40px;border-radius:14px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-weight:700;font-size:16px;text-align:center;outline:none">
     </div>
-    <button class="play" id="bContinue" style="font-size:19px;display:none;background:linear-gradient(135deg,var(--yellow),var(--coral));box-shadow:0 6px 0 #c25b3f;color:#3a1a10;margin-bottom:12px">▶ CONTINUE RUN</button>
-    <button class="play" id="bStart" style="font-size:21px">▶ PLAY FULL CAMPAIGN</button>
+    <button class="play" id="bContinue" style="font-size:19px;display:none;background:linear-gradient(135deg,#FCC44C,#FC954C);box-shadow:0 6px 0 #A86334;color:#3a2410;margin-bottom:12px">▶ CONTINUE RUN</button>
+    <button class="play" id="bStart" style="font-size:21px;background:linear-gradient(135deg,#01B1E9,#0E86BE);box-shadow:0 6px 0 #06557A;color:#ffffff">▶ PLAY FULL CAMPAIGN</button>
     <div style="font-size:14px;font-weight:800;opacity:.85;margin:16px 0 10px">— or jump straight into one game —</div>
     <div id="selGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
     <button class="btn b-glass" id="bBoard" style="font-size:15px;padding:12px 24px">🏆 Leaderboard</button>
@@ -299,7 +300,7 @@ function hud(){
 function hideOvs(){ ['ovStart','ovIntro','ovResult','ovOver','ovWin','ovPause','ovBoard'].forEach(i=>$(i).classList.add('hide')); }
 function pills(active){ return [1,2,3,4].map(i=>`<span class="pill ${i<active?'done':''} ${i===active?'now':''}">${ICON(LVICON[i],14,LVCOLOR[i])} ${LV[i].n}</span>`).join(''); }
 
-async function loadBest(){ try{const r=await window.storage.get('best');if(r&&r.value)G.best=parseInt(r.value)||0;}catch(e){} $('best').innerHTML=G.best>0?(ICON('trophy',13,'#ffd23f')+' Best: '+G.best.toLocaleString()):''; }
+async function loadBest(){ try{const r=await window.storage.get('best');if(r&&r.value)G.best=parseInt(r.value)||0;}catch(e){} $('best').innerHTML=G.best>0?(ICON('trophy',13,'#FCC44C')+' Best: '+G.best.toLocaleString()):''; }
 async function saveBest(){ try{await window.storage.set('best',String(G.best));}catch(e){} }
 
 /* ===== SAVED RUN (campaign checkpoint) ===== */
@@ -809,7 +810,7 @@ const LVICON={1:'tower',2:'firewall',3:'scan',4:'target'};
 const LVCOLOR={1:'#3ee37a',2:'#a96bff',3:'#ffd23f',4:'#36e3ff'};
 function ICON(name,size,color){ return `<span class="nicon" style="width:${size}px;height:${size}px;color:${color||'currentColor'};display:inline-flex;vertical-align:middle">${ICONS[name]||''}</span>`; }
 function buildPicker(){ const g=$('selGrid'); if(!g)return; g.innerHTML='';
-   const accent={1:'linear-gradient(160deg,#3ee37a,#36e3ff)',2:'linear-gradient(160deg,#a96bff,#ff5db1)',3:'linear-gradient(160deg,#ffd23f,#ff7a5c)',4:'linear-gradient(160deg,#36e3ff,#a96bff)'};
+   const accent={1:'linear-gradient(160deg,#01B1E9,#37CEFD)',2:'linear-gradient(160deg,#5661D7,#CA56D7)',3:'linear-gradient(160deg,#FCC44C,#FC954C)',4:'linear-gradient(160deg,#FF7AA4,#CA56D7)'};
    [1,2,3,4].forEach(i=>{ const d=document.createElement('button'); d.className='btn';
    d.style.cssText='background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:2px solid rgba(255,255,255,.25);padding:14px 8px;text-align:center;line-height:1.25;color:#fff';
    d.innerHTML=`<div style="width:74px;height:74px;margin:0 auto 8px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:${accent[i]};box-shadow:0 6px 18px rgba(0,0,0,.45),0 0 24px rgba(255,255,255,.12)">${ICON(LVICON[i],42,'#fff')}</div><div style="font-weight:800;font-size:15px">${LV[i].n}</div><div style="font-size:11px;opacity:.7;margin-top:2px">tap to play</div>`;
@@ -867,8 +868,8 @@ window.addEventListener('pointerdown',unlockAudio,{once:true});
 buildPicker(); hud(); loadBest(); loadRun();
 $('penIcon').innerHTML=ICONS.pen;
 $('sound').innerHTML=ICON('sound',18,'#36e3ff');
-$('bBoard').innerHTML=ICON('trophy',17,'#ffd23f')+' Leaderboard';
-{ const h=document.querySelector('#ovBoard h2'); if(h)h.innerHTML=ICON('trophy',30,'#ffd23f')+' LEADERBOARD'; }
+$('bBoard').innerHTML=ICON('trophy',17,'#FCC44C')+' Leaderboard';
+{ const h=document.querySelector('#ovBoard h2'); if(h)h.innerHTML=ICON('trophy',30,'#FCC44C')+' LEADERBOARD'; }
 (async()=>{ try{ const r=await window.storage.get('pname'); if(r&&r.value){ G.name=r.value; const pn=$('pname'); if(pn)pn.value=r.value; } }catch(e){}
   try{ const d=await window.storage.get('did'); if(d&&d.value)G.did=d.value; else ensureDid(); }catch(e){ ensureDid(); } })();
 </script>
